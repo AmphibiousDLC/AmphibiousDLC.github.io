@@ -645,7 +645,6 @@
         updateDisplay(); 
         switchTab('inventory'); // Start on inventory tab
     </script>
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
