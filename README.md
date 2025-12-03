@@ -527,16 +527,16 @@
         
         function clickSalamander() {
             if (!canClick) {
-                messageArea.textContent = "Cooldown active! Please wait2 seconds.";
+                messageArea.textContent = "Cooldown active! Please wait 2 seconds.";
                 return;
             }
             canClick = false;
             salamanderDisplay.classList.add('cooldown-active');
-            let timeLeft = COOLDOWN_TIME_MS / 1000;
+            let timeLeft = COOLDOWN_TIME_MS / 250;
             const countdownInterval = setInterval(() => {
                 timeLeft--;
                 if (timeLeft > 0) { messageArea.textContent = `Next click in ${timeLeft}s...`; } else { clearInterval(countdownInterval); }
-            }, 1000);
+            }, 250);
             setTimeout(() => {
                 canClick = true;
                 salamanderDisplay.classList.remove('cooldown-active');
