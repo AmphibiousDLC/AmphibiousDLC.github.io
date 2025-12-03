@@ -1,264 +1,4 @@
- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salamander Clicker - Final Layout</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #4CAF50;
-            color: white;
-            font-family: sans-serif;
-            margin: 0;
-            text-align: center;
-            font-size: 0.9em;
-        }
-
-        /* The new wrapper acting as the 'dark gray box' sandwich */
-        #game-wrapper {
-            background-color: #333; /* Dark gray for the top/bottom effect */
-            padding: 10px;
-            border-radius: 10px;
-            max-width: 980px; /* Fixed maximum width for the whole game area */
-            width: 95vw; /* Responsive width up to max-width */
-        }
-
-        /* Container for the three main columns to sit side-by-side */
-        #main-content-row {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            gap: 10px; /* Space between the three columns */
-        }
-
-
-        #main-clicker-area {
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-            width: 330px; 
-            height: 650px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        #salamander-display { font-size: 120px; cursor: pointer; transition: transform 0.1s ease; display: block; margin: 15px auto; }
-        #salamander-display:hover { transform: scale(1.1); }
-        #salamander-display.cooldown-active { cursor: not-allowed; opacity: 0.6; }
-
-        #message-area { padding: 8px; font-size: 0.9em; }
-        #stats-bar { font-size: 1em; margin-bottom: 10px; }
-
-        .upgrade-btn { padding: 8px 12px; font-size: 0.9em; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        #shrimp-bait-container, #trout-bait-container { display: none; width: 100%; }
-
-        #upgrades {
-            width: 100%;
-        }
-
-        /* --- Pond Area Styles --- */
-        #pond-area-container {
-            width: 250px;
-            height: 650px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        #your-pond-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 40px);
-            grid-template-rows: repeat(5, 40px);
-            gap: 3px;
-            background-color: #4da6ff;
-            border: 3px solid #333;
-            padding: 5px;
-        }
-
-        .pond-cell { width: 40px; height: 40px; background-color: rgba(255, 255, 255, 0.3); border: 1px solid rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
-        .pond-cell:hover { background-color: rgba(255, 255, 255, 0.5); }
-        .pond-cell.weed-active { background-color: rgba(76, 175, 80, 0.7); }
-
-
-        #trap-controls {
-            width: 100%;
-            margin-top: 10px;
-            margin-bottom: 20px;
-        }
-
-        #place-trap-btn { width: 100%; padding: 10px; font-size: 0.9em; background-color: orange; color: black; border: none; border-radius: 5px; cursor: pointer; }
-        #place-trap-btn:disabled { background-color: #7f8c8d; cursor: not-allowed; }
-        #place-weed-btn { width: 100%; padding: 10px; font-size: 0.9em; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;}
-        #place-weed-btn:disabled { background-color: #7f8c8d; cursor: not-allowed; }
-
-
-        /* --- Encyclopedia & Inventory Tab Styles --- */
-        #info-container {
-            width: 300px;
-            height: 650px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: left;
-            display: flex;
-            flex-direction: column;
-        }
-        #tab-buttons {
-            display: flex; 
-            justify-content: space-between; /* Ensures even space between */
-            margin-bottom: 10px;
-            align-items: center;
-        }
-        .tab-btn {
-            padding: 8px 12px;
-            cursor: pointer;
-            background-color: #555;
-            border: none;
-            color: white;
-            width: 48%; /* Wider width */
-            box-sizing: border-box; 
-        }
-        .tab-btn.active {
-            background-color: #4CAF50;
-        }
-        .tab-content {
-            display: none;
-            overflow-y: auto;
-            flex-grow: 1;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .encyclopedia-item {
-            padding: 4px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            font-size: 0.9em;
-        }
-        .item-locked {
-            color: #aaa;
-            font-style: italic;
-        }
-        .item-count {
-            float: right;
-            font-weight: bold;
-        }
-        #sell-controls {
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 1px solid #ddd;
-        }
-        #sell-controls select, #sell-controls input, #sell-controls button {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 5px;
-            box-sizing: border-box;
-        }
-
-        #code-redeemer-area {
-            margin-top: 20px;
-            padding-top: 10px;
-            border-top: 1px solid #ddd;
-        }
-        #code-redeemer-area input, #code-redeemer-area button {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 5px;
-            box-sizing: border-box;
-        }
-    </style>
-</head>
-<body>
-    <!-- Main Sandwich Wrapper -->
-    <div id="game-wrapper">
-        <div id="main-content-row">
-
-            <div id="main-clicker-area">
-                <div>
-                    <h1>Salamander Clicker</h1>
-                    <p style="font-size: 0.8em; margin-top: -15px; margin-bottom: 15px;">Made by AmphibiousDLC</p>
-                    
-                    <div id="stats-bar">
-                        <div>Clicks: <span id="click-count">0</span></div>
-                        <div>Tokens: 🟡 <span id="token-count">0</span></div>
-                    </div>
-
-                    <!-- --- Upgrades Area --- -->
-                    <div id="upgrades">
-                        <button id="better-bait-btn" class="upgrade-btn" onclick="buyBetterBait()">Buy "Better Bait" (Cost: 10 Tokens)</button>
-                        
-                        <div id="shrimp-bait-container">
-                            <button id="shrimp-bait-btn" class="upgrade-btn" onclick="buyShrimpBait()">Buy "Shrimp Bait" (Cost: 50 Tokens)</button>
-                        </div>
-
-                        <div id="trout-bait-container">
-                            <button id="trout-bait-btn" class="upgrade-btn" onclick="buyTroutBait()">Buy "Trout Bait" (Cost: 100 Tokens)</button>
-                        </div>
-                    </div>
-
-                    <div id="message-area">Click the salamander to search!</div>
-
-                    <span id="salamander-display" onclick="clickSalamander()">🦎</span>
-                </div>
-            </div>
-            
-            
-            <!-- --- New Pond Area --- -->
-            <div id="pond-area-container">
-                <div id="pond-label">Your Pond</div>
-                <div id="your-pond-grid">
-                    <!-- Pond cells generated by JS -->
-                </div>
-                <div id="trap-controls">
-                    <button id="place-trap-btn" onclick="toggleTrapPlacement('trap')">🛒 Place Bait Trap (Cost: 15 Tokens)</button>
-                    <button id="place-weed-btn" onclick="toggleTrapPlacement('weed')">🌿 Place Pond Weed (Cost: 20 Tokens)</button>
-                </div>
-            </div>
-
-            <!-- --- New Info Area (Tabs) --- -->
-            <div id="info-container">
-                <div id="tab-buttons">
-                    <button id="tab-inventory-btn" class="tab-btn active" onclick="switchTab('inventory')">Inventory</button>
-                    <button id="tab-encyclopedia-btn" class="tab-btn" onclick="switchTab('encyclopedia')">Encyclopedia</button>
-                </div>
-
-                <div id="inventory-content" class="tab-content active">
-                     <!-- Inventory items listed here dynamically -->
-                    <div id="sell-controls">
-                        <h3>Sell Catches</h3>
-                        <select id="sell-item-select">
-                            <option value="">Select an item to sell</option>
-                        </select>
-                        <input type="number" id="sell-quantity-input" placeholder="Quantity (e.g., 1 or 99)" min="1" value="1">
-                        <button onclick="sellItems()">Sell Selected Items</button>
-                    </div>
-                </div>
-
-                <div id="encyclopedia-content" class="tab-content">
-                    <!-- Encyclopedia items listed here dynamically -->
-                </div>
-
-                <!-- --- Code Redeemer Area --- -->
-                <div id="code-redeemer-area">
-                    <h3>Redeem Code</h3>
-                    <input type="text" id="redeem-code-input" placeholder="Enter code here...">
-                    <button onclick="redeemCode()">Redeem</button>
-                </div>
-            </div>
-        </div> <!-- End of main-content-row -->
-    </div> <!-- End of game-wrapper -->
-
-    <script>
-        // --- DOM Element References ---
+         // --- DOM Element References ---
         const messageArea = document.getElementById('message-area');
         const tokenCountSpan = document.getElementById('token-count');
         const clickCountSpan = document.getElementById('click-count');
@@ -295,8 +35,9 @@
         let placingType = null; // Can be 'trap', 'weed', or null
         let canClick = true;
         let dlcCodeRedeemed = false;
-        let hrgCodeRedeemed = false; // New state variable for HRG
-        
+        let hrgCodeRedeemed = false;
+        let squillCodeRedeemed = false; // New state variable for Squill
+
         let pondCellsData = []; 
 
 
@@ -305,7 +46,8 @@
             common: 0, swamp: 0, stream: 0, rocky: 0, dragonic: 0, baitedHuman: 0, trout: 0, eel: 0,
             token: 0, toad: 0, frog: 0, crayfish: 0, shrimp: 0, whitebait: 0,
             dlcSalamander: 0,
-            hrgSalamander: 0, // Added new item key
+            hrgSalamander: 0,
+            squillidillion: 0, // Added new item key
         };
         const itemDetails = {
             common: { name: 'Common Salamander', emoji: '🦎', type: 'salamander', sellPrice: 1 },
@@ -323,7 +65,8 @@
             shrimp: { name: 'Shrimp', emoji: '🦐', type: 'bait', sellPrice: 0.5 },
             whitebait: { name: 'Whitebait', emoji: '🐟', type: 'bait', sellPrice: 1 },
             dlcSalamander: { name: 'DLC Salamander', emoji: '🏆', type: 'salamander', sellPrice: 50 },
-            hrgSalamander: { name: 'HOG RIDERRRRR Salamander', emoji: '🐖', type: 'salamander', sellPrice: 50 }, // Added new item details
+            hrgSalamander: { name: 'HOG RIDERRRRR Salamander', emoji: '🐖', type: 'salamander', sellPrice: 50 },
+            squillidillion: { name: 'Squillildillion', emoji: '⭐', type: 'salamander', sellPrice: 5 },
         };
         // >>>>> END INVENTORY DEFINITIONS <<<<<
 
@@ -456,7 +199,7 @@
                 itemDiv.classList.add('encyclopedia-item');
 
                 // If the code is redeemed, the item is always visible in encyclopedia
-                if (count > 0 || (key === 'dlcSalamander' && dlcCodeRedeemed) || (key === 'hrgSalamander' && hrgCodeRedeemed)) {
+                if (count > 0 || (key === 'dlcSalamander' && dlcCodeRedeemed) || (key === 'hrgSalamander' && hrgCodeRedeemed) || (key === 'squillidillion' && squillCodeRedeemed)) {
                     itemDiv.innerHTML = `${details.emoji} ${details.name}`;
                 } else {
                     itemDiv.innerHTML = `??? (Locked)`;
@@ -499,6 +242,7 @@
             }
         }
 
+        // Function to handle the code redemption
         function redeemCode() {
             const code = redeemCodeInput.value.trim().toUpperCase(); // Convert to uppercase for case-insensitivity
 
@@ -515,6 +259,14 @@
                     inventory.hrgSalamander += 1;
                     hrgCodeRedeemed = true; // Prevents multiple uses
                     messageArea.textContent = "HOG RIDERRRRR! Code accepted! You received one HRG Salamander 🐖!";
+                } else {
+                    messageArea.textContent = "This code has already been redeemed.";
+                }
+            } else if (code === 'SQUILLSPAYBILL') {
+                if (!squillCodeRedeemed) {
+                    inventory.squillidillion += 1;
+                    squillCodeRedeemed = true; 
+                    messageArea.textContent = "Cha-ching! You received one Squillildillion ⭐!";
                 } else {
                     messageArea.textContent = "This code has already been redeemed.";
                 }
@@ -696,6 +448,3 @@
         initializePond(); 
         updateDisplay(); 
         switchTab('inventory'); // Start on inventory tab
-    </script>
-</body>
-</html>
