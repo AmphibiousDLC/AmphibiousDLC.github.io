@@ -284,7 +284,7 @@
         const POND_WEED_DURATION_MS = 20000; // 20 seconds
         const POND_WEED_COST = 20;
         const TRAP_COST = 15;
-        const COOLDOWN_TIME_MS = 2000;
+        const COOLDOWN_TIME_MS = 2000; // 2 seconds
         const TRAP_EMOJI = '⚓️';
         const WEED_EMOJI = '🌿';
         
@@ -532,11 +532,11 @@
             }
             canClick = false;
             salamanderDisplay.classList.add('cooldown-active');
-            let timeLeft = COOLDOWN_TIME_MS / 250;
+            let timeLeft = COOLDOWN_TIME_MS / 1000;
             const countdownInterval = setInterval(() => {
                 timeLeft--;
                 if (timeLeft > 0) { messageArea.textContent = `Next click in ${timeLeft}s...`; } else { clearInterval(countdownInterval); }
-            }, 250);
+            }, 1000);
             setTimeout(() => {
                 canClick = true;
                 salamanderDisplay.classList.remove('cooldown-active');
