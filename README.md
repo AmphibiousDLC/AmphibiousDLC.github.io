@@ -98,8 +98,8 @@
             flex-direction: column;
         }
         #tab-buttons {
-            display: flex;
-            justify-content: space-around;
+            display: flex; /* Use flexbox for tab buttons */
+            justify-content: flex-start; /* Align buttons to the start */
             margin-bottom: 10px;
         }
         .tab-btn {
@@ -108,7 +108,8 @@
             background-color: #555;
             border: none;
             color: white;
-            flex-grow: 1;
+            /* Removed flex-grow: 1 so they only take necessary width */
+            margin-right: 5px; /* Add slight margin between buttons */
         }
         .tab-btn.active {
             background-color: #4CAF50;
