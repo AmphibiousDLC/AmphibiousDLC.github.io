@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -164,7 +164,6 @@
             box-sizing: border-box;
         }
 
-        /* The styles for the new code input area */
         #code-redeemer-area {
             margin-top: 20px;
             padding-top: 10px;
@@ -248,7 +247,7 @@
                     <!-- Encyclopedia items listed here dynamically -->
                 </div>
 
-                <!-- --- Code Redeemer Area (THIS IS THE NEW SECTION) --- -->
+                <!-- --- Code Redeemer Area --- -->
                 <div id="code-redeemer-area">
                     <h3>Redeem Code</h3>
                     <input type="text" id="redeem-code-input" placeholder="Enter code here...">
@@ -276,7 +275,7 @@
         const salamanderDisplay = document.getElementById('salamander-display');
         const sellItemSelect = document.getElementById('sell-item-select');
         const sellQuantityInput = document.getElementById('sell-quantity-input');
-        const redeemCodeInput = document.getElementById('redeem-code-input'); // Reference to the new input
+        const redeemCodeInput = document.getElementById('redeem-code-input');
 
 
         // --- Game Constants and State Variables ---
@@ -295,7 +294,8 @@
         let troutBaitPurchased = false;
         let placingType = null; // Can be 'trap', 'weed', or null
         let canClick = true;
-        let dlcCodeRedeemed = false; // New state variable
+        let dlcCodeRedeemed = false;
+        let hrgCodeRedeemed = false; // New state variable for HRG
         
         let pondCellsData = []; 
 
@@ -304,7 +304,8 @@
         const inventory = {
             common: 0, swamp: 0, stream: 0, rocky: 0, dragonic: 0, baitedHuman: 0, trout: 0, eel: 0,
             token: 0, toad: 0, frog: 0, crayfish: 0, shrimp: 0, whitebait: 0,
-            dlcSalamander: 0, // Added new item key
+            dlcSalamander: 0,
+            hrgSalamander: 0, // Added new item key
         };
         const itemDetails = {
             common: { name: 'Common Salamander', emoji: '🦎', type: 'salamander', sellPrice: 1 },
@@ -321,7 +322,8 @@
             crayfish: { name: 'Crayfish', emoji: '🦞', type: 'bait', sellPrice: 2 },
             shrimp: { name: 'Shrimp', emoji: '🦐', type: 'bait', sellPrice: 0.5 },
             whitebait: { name: 'Whitebait', emoji: '🐟', type: 'bait', sellPrice: 1 },
-            dlcSalamander: { name: 'DLC Salamander', emoji: '🏆', type: 'salamander', sellPrice: 50 }, // Added new item details
+            dlcSalamander: { name: 'DLC Salamander', emoji: '🏆', type: 'salamander', sellPrice: 50 },
+            hrgSalamander: { name: 'HOG RIDERRRRR Salamander', emoji: '🐖', type: 'salamander', sellPrice: 50 }, // Added new item details
         };
         // >>>>> END INVENTORY DEFINITIONS <<<<<
 
@@ -453,8 +455,8 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.classList.add('encyclopedia-item');
 
-                // If the code is redeemed, the DLC item is always visible
-                if (count > 0 || (key === 'dlcSalamander' && dlcCodeRedeemed)) {
+                // If the code is redeemed, the item is always visible in encyclopedia
+                if (count > 0 || (key === 'dlcSalamander' && dlcCodeRedeemed) || (key === 'hrgSalamander' && hrgCodeRedeemed)) {
                     itemDiv.innerHTML = `${details.emoji} ${details.name}`;
                 } else {
                     itemDiv.innerHTML = `??? (Locked)`;
@@ -497,22 +499,30 @@
             }
         }
 
-        // New function to handle the code redemption
         function redeemCode() {
-            const code = redeemCodeInput.value.trim();
-            if (code === 'AmphibiousDLC') {
+            const code = redeemCodeInput.value.trim().toUpperCase(); // Convert to uppercase for case-insensitivity
+
+            if (code === 'AMPHIBIOUSDLC') {
                 if (!dlcCodeRedeemed) {
                     inventory.dlcSalamander += 1;
                     dlcCodeRedeemed = true; // Prevents multiple uses
                     messageArea.textContent = "Code accepted! You received one DLC Salamander 🏆!";
-                    updateDisplay();
-                    redeemCodeInput.value = "";
+                } else {
+                    messageArea.textContent = "This code has already been redeemed.";
+                }
+            } else if (code === 'HRG') {
+                if (!hrgCodeRedeemed) {
+                    inventory.hrgSalamander += 1;
+                    hrgCodeRedeemed = true; // Prevents multiple uses
+                    messageArea.textContent = "HOG RIDERRRRR! Code accepted! You received one HRG Salamander 🐖!";
                 } else {
                     messageArea.textContent = "This code has already been redeemed.";
                 }
             } else {
                 messageArea.textContent = "Invalid code.";
             }
+            updateDisplay();
+            redeemCodeInput.value = "";
         }
         
         function clickSalamander() {
