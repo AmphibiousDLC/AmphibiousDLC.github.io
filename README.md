@@ -659,7 +659,15 @@
         #message-area { margin-top: 10px; padding: 10px; border-radius: 4px; }
         .success { background-color: #e8f5e9; color: #4CAF50; }
         .error { background-color: #ffebee; color: #f44336; }
-    </style>
+
+    <div class="code-container">
+        <h2>Redeem Code</h2>
+        <input type="text" id="code-input" placeholder="Enter your code">
+        <button onclick="handleCodeSubmission()">Redeem</button>
+        <div id="message-area"></div>
+    </div>
+
+    <!-- ... (rest of the script tag) ... -->
 
     <div class="code-container">
         <h2>Redeem Code</h2>
@@ -686,7 +694,7 @@
         */
         window.redeemCode = function(code) {
             const validCodes = {
-                'AMPHIBIOUSDLC': { itemName: 'DLClamander', sellValue: 50, isRedeemed: false },
+                'AMPHIBIOUSDLC': { itemName: 'DLClamander', sellValue: 50, isRedeemed: True },
                 // Add more codes here:
                 // 'ANOTHERCODE123': { itemName: 'SomeItem', sellValue: 10, isRedeemed: false }
             };
