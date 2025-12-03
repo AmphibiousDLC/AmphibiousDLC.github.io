@@ -163,6 +163,18 @@
             margin-bottom: 5px;
             box-sizing: border-box;
         }
+
+        #code-redeemer-area {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+        #code-redeemer-area input, #code-redeemer-area button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 5px;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
@@ -234,10 +246,16 @@
                 <div id="encyclopedia-content" class="tab-content">
                     <!-- Encyclopedia items listed here dynamically -->
                 </div>
+
+                <!-- --- Code Redeemer Area --- -->
+                <div id="code-redeemer-area">
+                    <h3>Redeem Code</h3>
+                    <input type="text" id="redeem-code-input" placeholder="Enter code here...">
+                    <button onclick="redeemCode()">Redeem</button>
+                </div>
             </div>
         </div> <!-- End of main-content-row -->
     </div> <!-- End of game-wrapper -->
-
 
     <script>
         // --- DOM Element References ---
@@ -257,6 +275,7 @@
         const salamanderDisplay = document.getElementById('salamander-display');
         const sellItemSelect = document.getElementById('sell-item-select');
         const sellQuantityInput = document.getElementById('sell-quantity-input');
+        const redeemCodeInput = document.getElementById('redeem-code-input');
 
 
         // --- Game Constants and State Variables ---
@@ -275,6 +294,7 @@
         let troutBaitPurchased = false;
         let placingType = null; // Can be 'trap', 'weed', or null
         let canClick = true;
+        let dlcCodeRedeemed = false; // New state variable
         
         let pondCellsData = []; 
 
@@ -283,6 +303,7 @@
         const inventory = {
             common: 0, swamp: 0, stream: 0, rocky: 0, dragonic: 0, baitedHuman: 0, trout: 0, eel: 0,
             token: 0, toad: 0, frog: 0, crayfish: 0, shrimp: 0, whitebait: 0,
+            dlcSalamander: 0, // Added new item key
         };
         const itemDetails = {
             common: { name: 'Common Salamander', emoji: '🦎', type: 'salamander', sellPrice: 1 },
@@ -299,6 +320,7 @@
             crayfish: { name: 'Crayfish', emoji: '🦞', type: 'bait', sellPrice: 2 },
             shrimp: { name: 'Shrimp', emoji: '🦐', type: 'bait', sellPrice: 0.5 },
             whitebait: { name: 'Whitebait', emoji: '🐟', type: 'bait', sellPrice: 1 },
+            dlcSalamander: { name: 'DLC Salamander', emoji: '🏆', type: 'salamander', sellPrice: 50 }, // Added new item details
         };
         // >>>>> END INVENTORY DEFINITIONS <<<<<
 
@@ -315,7 +337,7 @@
                 { nameKey: 'baitedHuman', chance: 0.5, message: 'A confused human wanders by, looking baited!' },
                 { nameKey: 'token', chance: 9.5, message: 'You found a token! 🟡' }
             ];
-            
+
             if (betterBaitPurchased) { 
                 currentDrops.push(
                     { nameKey: 'toad', chance: 5, message: 'You caught a common toad! 🐸' }, 
@@ -430,7 +452,7 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.classList.add('encyclopedia-item');
 
-                if (count > 0) {
+                if (count > 0 || key === 'dlcSalamander') { // Show DLC salamander once code is redeemed or caught
                     itemDiv.innerHTML = `${details.emoji} ${details.name}`;
                 } else {
                     itemDiv.innerHTML = `??? (Locked)`;
@@ -470,6 +492,23 @@
                 updateDisplay();
             } else {
                 messageArea.textContent = `You do not have ${quantity} ${itemDetails[itemKey].name}s to sell.`;
+            }
+        }
+
+        function redeemCode() {
+            const code = redeemCodeInput.value.trim();
+            if (code === 'AmphibiousDLC') {
+                if (!dlcCodeRedeemed) {
+                    inventory.dlcSalamander += 1;
+                    dlcCodeRedeemed = true; // Prevents multiple uses
+                    messageArea.textContent = "Code accepted! You received one DLC Salamander 🏆!";
+                    updateDisplay();
+                    redeemCodeInput.value = "";
+                } else {
+                    messageArea.textContent = "This code has already been redeemed.";
+                }
+            } else {
+                messageArea.textContent = "Invalid code.";
             }
         }
         
@@ -645,111 +684,5 @@
         updateDisplay(); 
         switchTab('inventory'); // Start on inventory tab
     </script>
-    <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Redemption</title>
-    <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; }
-        .code-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 300px; text-align: center; }
-        input { padding: 10px; width: 80%; margin-top: 10px; border-radius: 4px; border: 1px solid #ccc; }
-        button { padding: 10px; margin-top: 10px; width: 80%; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        #message-area { margin-top: 10px; padding: 10px; border-radius: 4px; }
-        .success { background-color: #e8f5e9; color: #4CAF50; }
-        .error { background-color: #ffebee; color: #f44336; }
-
-    <div class="code-container">
-        <h2>Redeem Code</h2>
-        <input type="text" id="code-input" placeholder="Enter your code">
-        <button onclick="handleCodeSubmission()">Redeem</button>
-        <div id="message-area"></div>
-    </div>
-
-    <!-- ... (rest of the script tag) ... -->
-
-    <div class="code-container">
-        <h2>Redeem Code</h2>
-        <input type="text" id="code-input" placeholder="Enter your code">
-        <button onclick="handleCodeSubmission()">Redeem</button>
-        <div id="message-area"></div>
-    </div>
-
-    <script>
-        const messageArea = document.getElementById('message-area');
-        const codeInput = document.getElementById('code-input');
-
-        function showMessage(message, isError = false) {
-            messageArea.textContent = message;
-            messageArea.className = isError ? 'error' : 'success';
-        }
-
-        // --- Core Logic for Code Redemption ---
-
-        /* 
-         * This function should be called from your main game logic.
-         * It returns an object containing the reward name (e.g., 'DLClamander') 
-         * and the sell value (e.g., 50).
-        */
-        window.redeemCode = function(code) {
-            const validCodes = {
-                'AMPHIBIOUSDLC': { itemName: 'DLClamander', sellValue: 50, isRedeemed: True },
-                // Add more codes here:
-                // 'ANOTHERCODE123': { itemName: 'SomeItem', sellValue: 10, isRedeemed: false }
-            };
-
-            const inputCode = code.toUpperCase();
-
-            if (!validCodes[inputCode]) {
-                return { success: false, message: 'Invalid code.' };
-            }
-
-            if (validCodes[inputCode].isRedeemed) {
-                return { success: false, message: 'Code already redeemed.' };
-            }
-            
-            // Mark the code as redeemed (in a real game, you would save this to your server/localStorage)
-            validCodes[inputCode].isRedeemed = true; 
-
-            // Return the reward details
-            return { 
-                success: true, 
-                itemName: validCodes[inputCode].itemName, 
-                sellValue: validCodes[inputCode].sellValue,
-                message: `Successfully redeemed ${validCodes[inputCode].itemName}!`
-            };
-        }
-
-        // Helper function for the HTML interface demo
-        function handleCodeSubmission() {
-            const code = codeInput.value.trim();
-            if (code === "") {
-                showMessage("Please enter a code.", true);
-                return;
-            }
-
-            const result = window.redeemCode(code);
-            
-            if (result.success) {
-                showMessage(result.message, false);
-                // IMPORTANT: This is where you would call your game's function
-                // to add the item to the user's inventory or update their game state.
-                // Example: window.addToInventory(result.itemName, result.sellValue);
-                console.log(`Your game should now add ${result.itemName} to inventory.`);
-            } else {
-                showMessage(result.message, true);
-            }
-        }
-    </script>
-    // ...
-            if (result.success) {
-                showMessage(result.message, false);
-                window.givePlayerItem(result.itemName, result.sellValue);
-            } else {
-            // ...
-
-
 </body>
 </html>
-
