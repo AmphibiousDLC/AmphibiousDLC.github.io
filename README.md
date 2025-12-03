@@ -24,9 +24,8 @@
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-            /* Reduced width slightly */
             width: 330px; 
-            margin-right: 10px; /* Reduced margin slightly */
+            margin-right: 10px; 
             height: 650px;
             display: flex;
             flex-direction: column;
@@ -57,7 +56,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-right: 10px; /* Reduced margin slightly */
+            margin-right: 10px; 
         }
         
         #your-pond-grid {
@@ -72,7 +71,7 @@
 
         .pond-cell { width: 40px; height: 40px; background-color: rgba(255, 255, 255, 0.3); border: 1px solid rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
         .pond-cell:hover { background-color: rgba(255, 255, 255, 0.5); }
-        .pond-cell.weed-active { background-color: rgba(76, 175, 80, 0.7); /* Green tint when weed is active */ }
+        .pond-cell.weed-active { background-color: rgba(76, 175, 80, 0.7); }
 
 
         #trap-controls {
@@ -99,10 +98,10 @@
             flex-direction: column;
         }
         #tab-buttons {
-            display: flex; /* Ensures buttons are in a row */
-            justify-content: flex-start;
+            display: flex; 
+            justify-content: space-between; /* Distributes the buttons evenly */
             margin-bottom: 10px;
-            align-items: center; /* Aligns buttons vertically in the flex container */
+            align-items: center;
         }
         .tab-btn {
             padding: 8px 12px;
@@ -110,8 +109,9 @@
             background-color: #555;
             border: none;
             color: white;
-            margin-right: 5px; 
-            /* Removed flex-grow: 1 to ensure buttons don't stack/stretch */
+            /* Explicit width ensures they don't stretch or stack unexpectedly */
+            width: 48%; 
+            box-sizing: border-box; 
         }
         .tab-btn.active {
             background-color: #4CAF50;
