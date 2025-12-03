@@ -742,6 +742,13 @@
             }
         }
     </script>
+    // ...
+            if (result.success) {
+                showMessage(result.message, false);
+                window.givePlayerItem(result.itemName, result.sellValue);
+            } else {
+            // ...
+
 
 </body>
 </html>
