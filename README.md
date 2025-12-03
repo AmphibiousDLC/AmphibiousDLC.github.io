@@ -1,3 +1,6 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <script>
         // --- DOM Element References ---
         const messageArea = document.getElementById('message-area');
@@ -450,3 +453,5 @@
         updateDisplay(); 
         switchTab('inventory'); // Start on inventory tab
         <script>
+</body>
+</html>
