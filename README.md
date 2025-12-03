@@ -660,8 +660,6 @@
         .success { background-color: #e8f5e9; color: #4CAF50; }
         .error { background-color: #ffebee; color: #f44336; }
     </style>
-</head>
-<body>
 
     <div class="code-container">
         <h2>Redeem Code</h2>
