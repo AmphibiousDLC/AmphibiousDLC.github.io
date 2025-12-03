@@ -1,3 +1,4 @@
+<script>
         // --- DOM Element References ---
         const messageArea = document.getElementById('message-area');
         const tokenCountSpan = document.getElementById('token-count');
@@ -448,3 +449,4 @@
         initializePond(); 
         updateDisplay(); 
         switchTab('inventory'); // Start on inventory tab
+        <script>
