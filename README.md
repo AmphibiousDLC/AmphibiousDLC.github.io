@@ -98,8 +98,8 @@
             flex-direction: column;
         }
         #tab-buttons {
-            display: flex; /* Use flexbox for tab buttons */
-            justify-content: flex-start; /* Align buttons to the start */
+            display: flex; 
+            justify-content: flex-start;
             margin-bottom: 10px;
         }
         .tab-btn {
@@ -108,8 +108,8 @@
             background-color: #555;
             border: none;
             color: white;
-            /* Removed flex-grow: 1 so they only take necessary width */
-            margin-right: 5px; /* Add slight margin between buttons */
+            /* Removed flex-grow: 1 to prevent vertical stretching and ensure inline display */
+            margin-right: 5px; 
         }
         .tab-btn.active {
             background-color: #4CAF50;
@@ -153,7 +153,6 @@
     <div id="main-clicker-area">
         <div>
             <h1>Salamander Clicker</h1>
-            <!-- Added the requested line here -->
             <p style="font-size: 0.8em; margin-top: -15px; margin-bottom: 15px;">Made by AmphibiousDLC</p>
             
             <div id="stats-bar">
