@@ -645,176 +645,98 @@
         updateDisplay(); 
         switchTab('inventory'); // Start on inventory tab
     </script>
+    <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Leaderboard</title>
-    
-    <!-- CSS combined here -->
+    <title>Code Redemption</title>
     <style>
-        body {
-            font-family: sans-serif;
-            background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        #username-screen, #leaderboard-screen {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        input, button {
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-
-        button {
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
+        body { font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; }
+        .code-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+        input { padding: 10px; width: 80%; margin-top: 10px; border-radius: 4px; border: 1px solid #ccc; }
+        button { padding: 10px; margin-top: 10px; width: 80%; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        #message-area { margin-top: 10px; padding: 10px; border-radius: 4px; }
+        .success { background-color: #e8f5e9; color: #4CAF50; }
+        .error { background-color: #ffebee; color: #f44336; }
     </style>
+</head>
+<body>
 
-    <!-- Username Input Screen -->
-    <div id="username-screen">
-        <h1>Welcome!</h1>
-        <p>Please enter your username to play:</p>
-        <input type="text" id="username-input" placeholder="Enter username...">
-        <button id="start-game-btn">Start Game</button>
+    <div class="code-container">
+        <h2>Redeem Code</h2>
+        <input type="text" id="code-input" placeholder="Enter your code">
+        <button onclick="handleCodeSubmission()">Redeem</button>
+        <div id="message-area"></div>
     </div>
 
-    <!-- Leaderboard Screen (Hidden initially) -->
-    <div id="leaderboard-screen" style="display: none;">
-        <h1>Leaderboard</h1>
-        <table>
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Username</th>
-                    <th>Tokens</th>
-                </tr>
-            </thead>
-            <tbody id="leaderboard-body">
-                <!-- Leaderboard entries will be injected here by JavaScript -->
-            </tbody>
-        </table>
-    </div>
-
-    <!-- JavaScript combined here -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const usernameScreen = document.getElementById('username-screen');
-            const leaderboardScreen = document.getElementById('leaderboard-screen');
-            const usernameInput = document.getElementById('username-input');
-            const startGameBtn = document.getElementById('start-game-btn');
-            const leaderboardBody = document.getElementById('leaderboard-body');
-            // Removed userTokensDisplay and addTokensBtn references
+        const messageArea = document.getElementById('message-area');
+        const codeInput = document.getElementById('code-input');
 
-            let currentUser = null;
+        function showMessage(message, isError = false) {
+            messageArea.textContent = message;
+            messageArea.className = isError ? 'error' : 'success';
+        }
 
-            // --- Core Functions ---
+        // --- Core Logic for Code Redemption ---
 
-            function getLeaderboardData() {
-                const data = localStorage.getItem('leaderboardData');
-                return data ? JSON.parse(data) : [];
+        /* 
+         * This function should be called from your main game logic.
+         * It returns an object containing the reward name (e.g., 'DLClamander') 
+         * and the sell value (e.g., 50).
+        */
+        window.redeemCode = function(code) {
+            const validCodes = {
+                'AMPHIBIOUSDLC': { itemName: 'DLClamander', sellValue: 50, isRedeemed: false },
+                // Add more codes here:
+                // 'ANOTHERCODE123': { itemName: 'SomeItem', sellValue: 10, isRedeemed: false }
+            };
+
+            const inputCode = code.toUpperCase();
+
+            if (!validCodes[inputCode]) {
+                return { success: false, message: 'Invalid code.' };
             }
 
-            function saveLeaderboardData(data) {
-                // Sort data by tokens in descending order before saving
-                data.sort((a, b) => b.tokens - a.tokens);
-                localStorage.setItem('leaderboardData', JSON.stringify(data));
+            if (validCodes[inputCode].isRedeemed) {
+                return { success: false, message: 'Code already redeemed.' };
+            }
+            
+            // Mark the code as redeemed (in a real game, you would save this to your server/localStorage)
+            validCodes[inputCode].isRedeemed = true; 
+
+            // Return the reward details
+            return { 
+                success: true, 
+                itemName: validCodes[inputCode].itemName, 
+                sellValue: validCodes[inputCode].sellValue,
+                message: `Successfully redeemed ${validCodes[inputCode].itemName}!`
+            };
+        }
+
+        // Helper function for the HTML interface demo
+        function handleCodeSubmission() {
+            const code = codeInput.value.trim();
+            if (code === "") {
+                showMessage("Please enter a code.", true);
+                return;
             }
 
-            function renderLeaderboard() {
-                const data = getLeaderboardData();
-                leaderboardBody.innerHTML = ''; // Clear existing rows
-
-                data.forEach((entry, index) => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${index + 1}</td>
-                        <td>${entry.username}</td>
-                        <td>${entry.tokens}</td>
-                    `;
-                    leaderboardBody.appendChild(row);
-
-                    // Highlight the current user's row
-                    if (currentUser && entry.username === currentUser.username) {
-                        row.style.backgroundColor = '#e0e0e0';
-                    }
-                });
+            const result = window.redeemCode(code);
+            
+            if (result.success) {
+                showMessage(result.message, false);
+                // IMPORTANT: This is where you would call your game's function
+                // to add the item to the user's inventory or update their game state.
+                // Example: window.addToInventory(result.itemName, result.sellValue);
+                console.log(`Your game should now add ${result.itemName} to inventory.`);
+            } else {
+                showMessage(result.message, true);
             }
-
-            // This function is still here for you to call from your *external game code*
-            window.updateCurrentUserTokens = function(amount) {
-                if (!currentUser) return; // Exit if no user logged in
-
-                let data = getLeaderboardData();
-                const userIndex = data.findIndex(u => u.username === currentUser.username);
-
-                if (userIndex !== -1) {
-                    data[userIndex].tokens += amount;
-                    currentUser.tokens = data[userIndex].tokens;
-                    saveLeaderboardData(data);
-                    renderLeaderboard();
-                }
-            }
-
-            // --- Event Handlers ---
-
-            startGameBtn.addEventListener('click', () => {
-                const username = usernameInput.value.trim();
-
-                if (username) {
-                    let data = getLeaderboardData();
-                    let userFound = data.find(u => u.username === username);
-
-                    if (!userFound) {
-                        // If new user, initialize with 0 tokens
-                        userFound = { username: username, tokens: 0 };
-                        data.push(userFound);
-                        saveLeaderboardData(data);
-                    }
-
-                    currentUser = userFound;
-                    usernameScreen.style.display = 'none';
-                    leaderboardScreen.style.display = 'block';
-                    renderLeaderboard();
-
-                } else {
-                    alert('Please enter a username.');
-                }
-            });
-        });
+        }
     </script>
+
 </body>
 </html>
 
