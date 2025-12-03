@@ -164,6 +164,7 @@
             box-sizing: border-box;
         }
 
+        /* The styles for the new code input area */
         #code-redeemer-area {
             margin-top: 20px;
             padding-top: 10px;
@@ -247,7 +248,7 @@
                     <!-- Encyclopedia items listed here dynamically -->
                 </div>
 
-                <!-- --- Code Redeemer Area --- -->
+                <!-- --- Code Redeemer Area (THIS IS THE NEW SECTION) --- -->
                 <div id="code-redeemer-area">
                     <h3>Redeem Code</h3>
                     <input type="text" id="redeem-code-input" placeholder="Enter code here...">
@@ -275,7 +276,7 @@
         const salamanderDisplay = document.getElementById('salamander-display');
         const sellItemSelect = document.getElementById('sell-item-select');
         const sellQuantityInput = document.getElementById('sell-quantity-input');
-        const redeemCodeInput = document.getElementById('redeem-code-input');
+        const redeemCodeInput = document.getElementById('redeem-code-input'); // Reference to the new input
 
 
         // --- Game Constants and State Variables ---
@@ -416,7 +417,7 @@
         }
 
         function updateInventoryList() {
-             // Clear previous entries except for sell controls
+             // Clear previous entries except for sell controls and code area
             const itemsList = Array.from(inventoryContent.children).filter(child => child.id !== 'sell-controls');
             itemsList.forEach(item => item.remove());
 
@@ -452,7 +453,8 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.classList.add('encyclopedia-item');
 
-                if (count > 0 || key === 'dlcSalamander') { // Show DLC salamander once code is redeemed or caught
+                // If the code is redeemed, the DLC item is always visible
+                if (count > 0 || (key === 'dlcSalamander' && dlcCodeRedeemed)) {
                     itemDiv.innerHTML = `${details.emoji} ${details.name}`;
                 } else {
                     itemDiv.innerHTML = `??? (Locked)`;
@@ -495,6 +497,7 @@
             }
         }
 
+        // New function to handle the code redemption
         function redeemCode() {
             const code = redeemCodeInput.value.trim();
             if (code === 'AmphibiousDLC') {
