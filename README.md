@@ -702,8 +702,6 @@
             cursor: pointer;
         }
     </style>
-</head>
-<body>
 
     <!-- Username Input Screen -->
     <div id="username-screen">
