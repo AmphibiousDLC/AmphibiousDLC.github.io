@@ -284,8 +284,8 @@
         const POND_WEED_DURATION_MS = 20000; // 20 seconds
         const POND_WEED_COST = 20;
         const TRAP_COST = 15;
-        const COOLDOWN_TIME_MS = 5000;
-        const TRAP_EMOJI = '🧺';
+        const COOLDOWN_TIME_MS = 2000;
+        const TRAP_EMOJI = '⚓️';
         const WEED_EMOJI = '🌿';
         
         let totalClicks = 0;
@@ -527,7 +527,7 @@
         
         function clickSalamander() {
             if (!canClick) {
-                messageArea.textContent = "Cooldown active! Please wait 5 seconds.";
+                messageArea.textContent = "Cooldown active! Please wait2 seconds.";
                 return;
             }
             canClick = false;
