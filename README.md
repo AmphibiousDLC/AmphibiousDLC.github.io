@@ -24,8 +24,9 @@
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-            width: 350px;
-            margin-right: 15px;
+            /* Reduced width slightly */
+            width: 330px; 
+            margin-right: 10px; /* Reduced margin slightly */
             height: 650px;
             display: flex;
             flex-direction: column;
@@ -56,7 +57,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-right: 15px;
+            margin-right: 10px; /* Reduced margin slightly */
         }
         
         #your-pond-grid {
@@ -98,9 +99,10 @@
             flex-direction: column;
         }
         #tab-buttons {
-            display: flex; 
+            display: flex; /* Ensures buttons are in a row */
             justify-content: flex-start;
             margin-bottom: 10px;
+            align-items: center; /* Aligns buttons vertically in the flex container */
         }
         .tab-btn {
             padding: 8px 12px;
@@ -108,8 +110,8 @@
             background-color: #555;
             border: none;
             color: white;
-            /* Removed flex-grow: 1 to prevent vertical stretching and ensure inline display */
             margin-right: 5px; 
+            /* Removed flex-grow: 1 to ensure buttons don't stack/stretch */
         }
         .tab-btn.active {
             background-color: #4CAF50;
