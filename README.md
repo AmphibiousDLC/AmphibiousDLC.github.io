@@ -529,23 +529,22 @@
             redeemCodeInput.value = "";
         }
         
-        function clickSalamander() {
+                function clickSalamander() {
             if (!canClick) {
                 messageArea.textContent = "Cooldown active! Please wait 2 seconds.";
                 return;
             }
             canClick = false;
             salamanderDisplay.classList.add('cooldown-active');
-            let timeLeft = COOLDOWN_TIME_MS / 1000;
-            const countdownInterval = setInterval(() => {
-                timeLeft--;
-                if (timeLeft > 0) { messageArea.textContent = `Next click in ${timeLeft}s...`; } else { clearInterval(countdownInterval); }
-            }, 1000);
+
+            // Use a specific timeout to end the main cooldown
             setTimeout(() => {
                 canClick = true;
                 salamanderDisplay.classList.remove('cooldown-active');
+                messageArea.textContent = "Click the salamander to search!"; // Reset message
             }, COOLDOWN_TIME_MS);
 
+            // Rest of your existing drop logic
             totalClicks++;
             const currentDrops = getDropsTable();
             const roll = Math.random() * 100;
@@ -565,6 +564,8 @@
                  messageArea.textContent = foundMessage;
             }
             updateDisplay();
+        }
+
         }
         function buyBetterBait() {
             if (inventory.token >= 10 && !betterBaitPurchased) {
