@@ -207,7 +207,8 @@
 
                     <div id="message-area">Click the salamander to search!</div>
 
-                    <span id="salamander-display" onclick="clickSalamander()">🦎</span>
+                   <span id="salamander-display">🦎</span>
+
                 </div>
             </div>
             
@@ -701,6 +702,14 @@
         initializePond(); 
         updateDisplay(); 
         switchTab('inventory'); // Start on inventory tab
+                // --- Initialization ---
+        initializePond(); 
+        updateDisplay(); 
+        switchTab('inventory'); // Start on inventory tab
+        
+        // Add this new line:
+        salamanderDisplay.addEventListener('click', clickSalamander);
+
     </script>
 </body>
 </html>
