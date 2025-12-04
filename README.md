@@ -534,7 +534,7 @@
                 messageArea.textContent = "Cooldown active! Please wait 2 seconds.";
                 return;
             }
-            canClick = true;
+            canClick = false;
             salamanderDisplay.classList.add('cooldown-active');
 
             // Use a specific timeout to end the main cooldown
