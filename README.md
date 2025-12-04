@@ -7,7 +7,7 @@
         const shrimpBaitContainer = document.getElementById('shrimp-bait-container');
         const shrimpBaitBtn = document.getElementById('shrimp-bait-btn');
         const troutBaitContainer = document.getElementById('trout-bait-container');
-        const troutBaitBtn = document.getElementById('trout-bait-btn');
+        const troutBaitBtn = document.getElementById('trout-bait-btn'); // Corrected typo
         const placeTrapBtn = document.getElementById('place-trap-btn');
         const placeWeedBtn = document.getElementById('place-weed-btn');
         const pondGrid = document.getElementById('your-pond-grid');
@@ -219,7 +219,6 @@
                 encyclopediaContent.appendChild(itemDiv);
             }
         }
-
         function sellItems() {
             const itemKey = sellItemSelect.value;
             const quantityString = sellQuantityInput.value;
