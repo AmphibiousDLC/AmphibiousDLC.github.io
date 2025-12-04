@@ -1,3 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salamander Clicker - Final Layout</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #4CAF50;
+            color: white;
+            font-family: sans-serif;
+            margin: 0;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        /* The new wrapper acting as the 'dark gray box' sandwich */
+        #game-wrapper {
+            background-color: #333; /* Dark gray for the top/bottom effect */
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 980px; /* Fixed maximum width for the whole game area */
+            width: 95vw; /* Responsive width up to max-width */
+        }
+
+        /* Container for the three main columns to sit side-by-side */
+        #main-content-row {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 10px; /* Space between the three columns */
+        }
+
+
+        #main-clicker-area {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            width: 330px; 
+            height: 650px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        #salamander-display { font-size: 120px; cursor: pointer; transition: transform 0.1s ease; display: block; margin: 15px auto; }
+        #salamander-display:hover { transform: scale(1.1); }
+        #salamander-display.cooldown-active { cursor: not-allowed; opacity: 0.6; }
+
+        #message-area { padding: 8px; font-size: 0.9em; }
+        #stats-bar { font-size: 1em; margin-bottom: 10px; }
+
+        .upgrade-btn { padding: 8px 12px; font-size: 0.9em; margin: 5s 0; width: 100%; box-sizing: border-box; }
+        #shrimp-bait-container, #trout-bait-container { display: none; width: 100%; }
+
+        #upgrades {
+            width: 100%;
+        }
+
+        /* --- Pond Area Styles --- */
+        #pond-area-container {
+            width: 250px;
+            height: 650px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        #your-pond-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 40px);
+            grid-template-rows: repeat(5, 40px);
+            gap: 3px;
+            background-color: #4da6ff;
+            border: 3px solid #333;
+            padding: 5px;
+        }
+
+        .pond-cell { width: 40px; height: 40px; background-color: rgba(255, 255, 255, 0.3); border: 1px solid rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
+        .pond-cell:hover { background-color: rgba(255, 255, 255, 0.5); }
+        .pond-cell.weed-active { background-color: rgba(76, 175, 80, 0.7); }
+
+
+        #trap-controls {
+            width: 100%;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        #place-trap-btn { width: 100%; padding: 10px; font-size: 0.9em; background-color: orange; color: black; border: none; border-radius: 5px; cursor: pointer; }
+        #place-trap-btn:disabled { background-color: #7f8c8d; cursor: not-allowed; }
+        #place-weed-btn { width: 100%; padding: 10px; font-size: 0.9em; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;}
+        #place-weed-btn:disabled { background-color: #7f8f8d; cursor: not-allowed; }
+
+
+        /* --- Encyclopedia & Inventory Tab Styles --- */
+        #info-container {
+            width: 300px;
+            height: 650px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+        }
+        #tab-buttons {
+            display: flex; 
+            justify-content: space-between; /* Ensures even space between */
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .tab-btn {
+            padding: 8px 12px;
+            cursor: pointer;
+            background-color: #555;
+            border: none;
+            color: white;
+            width: 48%; /* Wider width */
+            box-sizing: border-box; 
+        }
+        .tab-btn.active {
+            background-color: #4CAF50;
+        }
+        .tab-content {
+            display: none;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* --- Rarity Colors --- */
+        .rarity-common { color: white; }
+        .rarity-rare { color: #1E90FF; } /* Dodger Blue */
+        .rarity-epic { color: #9370DB; } /* Medium Purple */
+        .rarity-secret { color: #FFD700; } /* Gold */
+        
+        .encyclopedia-item {
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.9em;
+        }
+        .item-locked {
+            color: #aaa;
+            font-style: italic;
+        }
+        .item-count {
+            float: right;
+            font-weight: bold;
+        }
+        #sell-controls {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+        #sell-controls select, #sell-controls input, #sell-controls button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 5px;
+            box-sizing: border-box;
+        }
+
+        #code-redeemer-area {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+        #code-redeemer-area input, #code-redeemer-area button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 5px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
 <script>
         // --- DOM Element References ---
         const messageArea = document.getElementById('message-area');
