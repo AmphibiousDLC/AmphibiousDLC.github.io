@@ -183,8 +183,6 @@
             box-sizing: border-box;
         }
     </style>
-</head>
-<body>
 
 <script>
         // --- DOM Element References ---
