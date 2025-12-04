@@ -17,10 +17,9 @@
             font-family: sans-serif;
         }
 
-        /* Main container for the game area and side controls */
         #main-layout-container {
             display: flex;
-            gap: 15px; /* Space between canvas and side controls */
+            gap: 15px;
         }
 
         canvas {
@@ -55,17 +54,15 @@
         .color-option.selected { border-color: white; }
         #start-button { padding: 10px 20px; font-size: 1.2em; margin-top: 20px; }
 
-        /* --- Controls & Info Styles (Below and Right of Canvas) --- */
+        /* --- Controls & Info Styles --- */
 
-        /* Container for the small buttons on the right side */
         #side-controls-container {
             display: flex;
             flex-direction: column;
             gap: 10px;
-            align-items: stretch; /* Makes buttons fill the container width */
+            align-items: stretch;
         }
-        
-        /* Container for the big movement buttons below the canvas */
+
         #movement-controls-container {
             margin-top: 15px;
             display: flex;
@@ -73,7 +70,6 @@
             justify-content: center;
         }
 
-        /* General style for all control buttons */
         #movement-controls-container button, #side-controls-container button {
             padding: 10px 15px;
             font-size: 1em;
@@ -84,23 +80,22 @@
             user-select: none;
         }
 
-        /* Specific styles for the large movement buttons */
         #left-btn, #right-btn {
-            font-size: 2em; /* Made bigger */
+            font-size: 2em;
             width: 80px;
             height: 80px;
         }
         #jump-btn {
-            font-size: 1.5em; /* Made bigger */
+            font-size: 1.5em;
             width: 120px;
             height: 80px;
         }
-        
-        /* Styles for mode button active states */
+
         #delete-btn.active { background-color: #e74c3c; color: white; border-color: #c0392b; }
         #portal-btn.active { background-color: #9b59b6; color: white; border-color: #8e44ad; }
+        #death-btn.active { background-color: #a00; color: white; border-color: #700; }
         #checkpoint-btn.active { background-color: #f1c40f; color: black; border-color: #d35400; }
-        
+
         #info-message {
             margin-top: 10px;
             font-size: 0.8em;
@@ -126,7 +121,8 @@
         <!-- Left Side: Canvas and Movement Controls -->
         <div>
             <div id="game-container">
-                <canvas id="gameCanvas" width="600" height="400"></canvas>
+                <!-- CANVAS SIZE ADJUSTED TO 512x400 (32x25 grid @ 16px) -->
+                <canvas id="gameCanvas" width="512" height="400"></canvas>
                 <div id="game-message-overlay">YOU DED NOW</div>
                 
                 <!-- Start Screen Overlay -->
@@ -168,6 +164,9 @@
     </div>
     
     <script>
+        // GRID SIZE CHANGED HERE TO 16
+        const GRID_SIZE = 16; 
+
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const deleteBtn = document.getElementById("delete-btn");
@@ -178,11 +177,10 @@
         const gameMessageOverlay = document.getElementById("game-message-overlay");
         const usernameInput = document.getElementById("username-input");
 
-        const GRID_SIZE = 40;
-        const PLAYER_SIZE = 38;
+        const PLAYER_SIZE = GRID_SIZE - 2; // Keep player slightly smaller than grid for visibility
         const GRAVITY = 0.5;
-        const JUMP_FORCE = -10;
-        const MOVE_SPEED = 5;
+        const JUMP_FORCE = -8; // Adjusted jump force for smaller scale
+        const MOVE_SPEED = 4; // Adjusted move speed for smaller scale
         const initialSpawnX = GRID_SIZE;
         const initialSpawnY = canvas.height - GRID_SIZE * 2;
 
@@ -208,6 +206,7 @@
         let canTeleport = true;
         let isDead = false;
 
+        // Create the floor
         for (let i = 0; i < canvas.width / GRID_SIZE; i++) {
             map.push({ x: i * GRID_SIZE, y: canvas.height - GRID_SIZE, width: GRID_SIZE, height: GRID_SIZE, type: 'normal' });
         }
@@ -334,7 +333,7 @@
                 if (isColliding(player, portal)) {
                     canTeleport = false;
                     const destinationPortal = portals[1 - index];
-                    player.x = destinationPortal.x + destinationPortal.width + 5; 
+                    player.x = destinationPortal.x + destinationPortal.width + 2; // Small buffer for new grid size
                     player.y = destinationPortal.y; 
                     setTimeout(() => { canTeleport = true; }, 300);
                 }
@@ -433,12 +432,16 @@
                 // Skip drawing game elements during the "dead" blackout screen
             } else {
                 ctx.strokeStyle = '#ccc';
+                // Line width needs to be adjusted for the smaller grid size to look good
+                ctx.lineWidth = 0.5; 
                 for (let i = 0; i < canvas.width / GRID_SIZE; i++) {
                     ctx.beginPath(); ctx.moveTo(i * GRID_SIZE, 0); ctx.lineTo(i * GRID_SIZE, canvas.height); ctx.stroke();
                 }
                 for (let i = 0; i < canvas.height / GRID_SIZE; i++) {
                     ctx.beginPath(); ctx.moveTo(0, i * GRID_SIZE); ctx.lineTo(canvas.width, i * GRID_SIZE); ctx.stroke();
                 }
+                ctx.lineWidth = 1; // Reset default line width
+
 
                 ctx.fillStyle = 'gray';
                 map.forEach(block => { ctx.fillRect(block.x, block.y, block.width, block.height); });
@@ -454,12 +457,11 @@
                     ctx.fillStyle = 'red';
                     ctx.fillRect(block.x, block.y, block.width, block.height);
                     ctx.strokeStyle = 'black';
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = 1;
                     ctx.beginPath();
                     ctx.moveTo(block.x, block.y); ctx.lineTo(block.x + block.width, block.y + block.height);
                     ctx.moveTo(block.x + block.width, block.y); ctx.lineTo(block.x, block.y + block.height);
                     ctx.stroke();
-                    ctx.lineWidth = 1;
                 });
                 checkpoints.forEach(block => {
                     ctx.fillStyle = 'yellow';
