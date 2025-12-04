@@ -1,264 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salamander Clicker - Final Layout</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #4CAF50;
-            color: white;
-            font-family: sans-serif;
-            margin: 0;
-            text-align: center;
-            font-size: 0.9em;
-        }
-
-        /* The new wrapper acting as the 'dark gray box' sandwich */
-        #game-wrapper {
-            background-color: #333; /* Dark gray for the top/bottom effect */
-            padding: 10px;
-            border-radius: 10px;
-            max-width: 980px; /* Fixed maximum width for the whole game area */
-            width: 95vw; /* Responsive width up to max-width */
-        }
-
-        /* Container for the three main columns to sit side-by-side */
-        #main-content-row {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            gap: 10px; /* Space between the three columns */
-        }
-
-
-        #main-clicker-area {
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-            width: 330px; 
-            height: 650px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        #salamander-display { font-size: 120px; cursor: pointer; transition: transform 0.1s ease; display: block; margin: 15px auto; }
-        #salamander-display:hover { transform: scale(1.1); }
-        #salamander-display.cooldown-active { cursor: not-allowed; opacity: 0.6; }
-
-        #message-area { padding: 8px; font-size: 0.9em; }
-        #stats-bar { font-size: 1em; margin-bottom: 10px; }
-
-        .upgrade-btn { padding: 8px 12px; font-size: 0.9em; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        #shrimp-bait-container, #trout-bait-container { display: none; width: 100%; }
-
-        #upgrades {
-            width: 100%;
-        }
-
-        /* --- Pond Area Styles --- */
-        #pond-area-container {
-            width: 250px;
-            height: 650px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        #your-pond-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 40px);
-            grid-template-rows: repeat(5, 40px);
-            gap: 3px;
-            background-color: #4da6ff;
-            border: 3px solid #333;
-            padding: 5px;
-        }
-
-        .pond-cell { width: 40px; height: 40px; background-color: rgba(255, 255, 255, 0.3); border: 1px solid rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
-        .pond-cell:hover { background-color: rgba(255, 255, 255, 0.5); }
-        .pond-cell.weed-active { background-color: rgba(76, 175, 80, 0.7); }
-
-
-        #trap-controls {
-            width: 100%;
-            margin-top: 10px;
-            margin-bottom: 20px;
-        }
-
-        #place-trap-btn { width: 100%; padding: 10px; font-size: 0.9em; background-color: orange; color: black; border: none; border-radius: 5px; cursor: pointer; }
-        #place-trap-btn:disabled { background-color: #7f8c8d; cursor: not-allowed; }
-        #place-weed-btn { width: 100%; padding: 10px; font-size: 0.9em; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;}
-        #place-weed-btn:disabled { background-color: #7f8c8d; cursor: not-allowed; }
-
-
-        /* --- Encyclopedia & Inventory Tab Styles --- */
-        #info-container {
-            width: 300px;
-            height: 650px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: left;
-            display: flex;
-            flex-direction: column;
-        }
-        #tab-buttons {
-            display: flex; 
-            justify-content: space-between; /* Ensures even space between */
-            margin-bottom: 10px;
-            align-items: center;
-        }
-        .tab-btn {
-            padding: 8px 12px;
-            cursor: pointer;
-            background-color: #555;
-            border: none;
-            color: white;
-            width: 48%; /* Wider width */
-            box-sizing: border-box; 
-        }
-        .tab-btn.active {
-            background-color: #4CAF50;
-        }
-        .tab-content {
-            display: none;
-            overflow-y: auto;
-            flex-grow: 1;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .encyclopedia-item {
-            padding: 4px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            font-size: 0.9em;
-        }
-        .item-locked {
-            color: #aaa;
-            font-style: italic;
-        }
-        .item-count {
-            float: right;
-            font-weight: bold;
-        }
-        #sell-controls {
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 1px solid #ddd;
-        }
-        #sell-controls select, #sell-controls input, #sell-controls button {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 5px;
-            box-sizing: border-box;
-        }
-
-        #code-redeemer-area {
-            margin-top: 20px;
-            padding-top: 10px;
-            border-top: 1px solid #ddd;
-        }
-        #code-redeemer-area input, #code-redeemer-area button {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 5px;
-            box-sizing: border-box;
-        }
-    </style>
-</head>
-<body>
-    <!-- Main Sandwich Wrapper -->
-    <div id="game-wrapper">
-        <div id="main-content-row">
-
-            <div id="main-clicker-area">
-                <div>
-                    <h1>Salamander Clicker</h1>
-                    <p style="font-size: 0.8em; margin-top: -15px; margin-bottom: 15px;">Made by AmphibiousDLC</p>
-                    
-                    <div id="stats-bar">
-                        <div>Clicks: <span id="click-count">0</span></div>
-                        <div>Tokens: 🟡 <span id="token-count">0</span></div>
-                    </div>
-
-                    <!-- --- Upgrades Area --- -->
-                    <div id="upgrades">
-                        <button id="better-bait-btn" class="upgrade-btn" onclick="buyBetterBait()">Buy "Better Bait" (Cost: 10 Tokens)</button>
-                        
-                        <div id="shrimp-bait-container">
-                            <button id="shrimp-bait-btn" class="upgrade-btn" onclick="buyShrimpBait()">Buy "Shrimp Bait" (Cost: 50 Tokens)</button>
-                        </div>
-
-                        <div id="trout-bait-container">
-                            <button id="trout-bait-btn" class="upgrade-btn" onclick="buyTroutBait()">Buy "Trout Bait" (Cost: 100 Tokens)</button>
-                        </div>
-                    </div>
-
-                    <div id="message-area">Click the salamander to search!</div>
-
-                   <span id="salamander-display">🦎</span>
-
-                </div>
-            </div>
-            
-            
-            <!-- --- New Pond Area --- -->
-            <div id="pond-area-container">
-                <div id="pond-label">Your Pond</div>
-                <div id="your-pond-grid">
-                    <!-- Pond cells generated by JS -->
-                </div>
-                <div id="trap-controls">
-                    <button id="place-trap-btn" onclick="toggleTrapPlacement('trap')">🛒 Place Bait Trap (Cost: 15 Tokens)</button>
-                    <button id="place-weed-btn" onclick="toggleTrapPlacement('weed')">🌿 Place Pond Weed (Cost: 20 Tokens)</button>
-                </div>
-            </div>
-
-            <!-- --- New Info Area (Tabs) --- -->
-            <div id="info-container">
-                <div id="tab-buttons">
-                    <button id="tab-inventory-btn" class="tab-btn active" onclick="switchTab('inventory')">Inventory</button>
-                    <button id="tab-encyclopedia-btn" class="tab-btn" onclick="switchTab('encyclopedia')">Encyclopedia</button>
-                </div>
-
-                <div id="inventory-content" class="tab-content active">
-                     <!-- Inventory items listed here dynamically -->
-                    <div id="sell-controls">
-                        <h3>Sell Catches</h3>
-                        <select id="sell-item-select">
-                            <option value="">Select an item to sell</option>
-                        </select>
-                        <input type="number" id="sell-quantity-input" placeholder="Quantity (e.g., 1 or 99)" min="1" value="1">
-                        <button onclick="sellItems()">Sell Selected Items</button>
-                    </div>
-                </div>
-
-                <div id="encyclopedia-content" class="tab-content">
-                    <!-- Encyclopedia items listed here dynamically -->
-                </div>
-
-                <!-- --- Code Redeemer Area --- -->
-                <div id="code-redeemer-area">
-                    <h3>Redeem Code</h3>
-                    <input type="text" id="redeem-code-input" placeholder="Enter code here...">
-                    <button onclick="redeemCode()">Redeem</button>
-                </div>
-            </div>
-        </div> <!-- End of main-content-row -->
-    </div> <!-- End of game-wrapper -->
-
-    <script>
+<script>
         // --- DOM Element References ---
         const messageArea = document.getElementById('message-area');
         const tokenCountSpan = document.getElementById('token-count');
@@ -267,7 +7,7 @@
         const shrimpBaitContainer = document.getElementById('shrimp-bait-container');
         const shrimpBaitBtn = document.getElementById('shrimp-bait-btn');
         const troutBaitContainer = document.getElementById('trout-bait-container');
-        const troutBaitBtn = document.getElementById('trout-bait-btn');
+        const troutBaitBtn = document = document.getElementById('trout-bait-btn');
         const placeTrapBtn = document.getElementById('place-trap-btn');
         const placeWeedBtn = document.getElementById('place-weed-btn');
         const pondGrid = document.getElementById('your-pond-grid');
@@ -278,15 +18,14 @@
         const sellQuantityInput = document.getElementById('sell-quantity-input');
         const redeemCodeInput = document.getElementById('redeem-code-input');
 
-
         // --- Game Constants and State Variables ---
         const POND_SIZE = 5;
         const TRAP_DURABILITY = 10; // Durability of a trap once placed
         const POND_WEED_DURATION_MS = 20000; // 20 seconds
         const POND_WEED_COST = 20;
         const TRAP_COST = 15;
-        const COOLDOWN_TIME_MS = 2000; // 2 seconds
-        const TRAP_EMOJI = '⚓️';
+        const COOLDOWN_TIME_MS = 2000; // Set to 2 seconds
+        const TRAP_EMOJI = '🧺';
         const WEED_EMOJI = '🌿';
         
         let totalClicks = 0;
@@ -306,32 +45,39 @@
             common: 0, swamp: 0, stream: 0, rocky: 0, dragonic: 0, baitedHuman: 0, trout: 0, eel: 0,
             token: 0, toad: 0, frog: 0, crayfish: 0, shrimp: 0, whitebait: 0,
             dlcSalamander: 0,
-            hrgSalamander: 0, // Added new item key
+            hrgSalamander: 0,
         };
         const itemDetails = {
-            common: { name: 'Common Salamander', emoji: '🦎', type: 'salamander', sellPrice: 1 },
-            swamp: { name: 'Swamp Salamander', emoji: '🦎', type: 'salamander', sellPrice: 1 },
-            stream: { name: 'Stream/River Salamander', emoji: '💧', type: 'salamander', sellPrice: 1 },
-            rocky: { name: 'Rocky Bay Salamander', emoji: '🪨', type: 'salamander', sellPrice: 1 },
-            dragonic: { name: 'Dragonic Salamander', emoji: '🐉', type: 'salamander', sellPrice: 2 },
-            baitedHuman: { name: 'Baited Human', emoji: '👤', type: 'salamander', sellPrice: 0 }, 
-            trout: { name: 'Trout', emoji: '🐟', type: 'misc', sellPrice: 2 },
-            eel: { name: 'Eel', emoji: '🐍', type: 'salamander', sellPrice: 2 },
-            token: { name: 'Token', emoji: '🟡', type: 'currency', sellPrice: 0 }, 
-            toad: { name: 'Toad', emoji: '🐸', type: 'salamander', sellPrice: 1 },
-            frog: { name: 'Frog', emoji: '🐸', type: 'salamander', sellPrice: 2 },
-            crayfish: { name: 'Crayfish', emoji: '🦞', type: 'salamander', sellPrice: 2 },
-            shrimp: { name: 'Shrimp', emoji: '🦐', type: 'salamander', sellPrice: 0.5 },
-            whitebait: { name: 'Whitebait', emoji: '🐟', type: 'salamander', sellPrice: 1 },
-            dlcSalamander: { name: 'DLC Salamander', emoji: '🏆', type: 'salamander', sellPrice: 50 },
-            hrgSalamander: { name: 'HOG RIDERRRRR Salamander', emoji: '🐖', type: 'salamander', sellPrice: 50 }, // Added new item details
+            // Common Items
+            common: { name: 'Common Salamander', emoji: '🦎', type: 'salamander', sellPrice: 1, rarity: 'common' },
+            swamp: { name: 'Swamp Salamander', emoji: '🦎', type: 'salamander', sellPrice: 1, rarity: 'common' },
+            stream: { name: 'Stream/River Salamander', emoji: '💧', type: 'salamander', sellPrice: 1, rarity: 'common' },
+            whitebait: { name: 'Whitebait', emoji: '🐟', type: 'bait', sellPrice: 1, rarity: 'common' },
+            shrimp: { name: 'Shrimp', emoji: '🦐', type: 'bait', sellPrice: 0.5, rarity: 'common' },
+            
+            // Rare Items
+            rocky: { name: 'Rocky Bay Salamander', emoji: '🪨', type: 'salamander', sellPrice: 1, rarity: 'rare' },
+            dragonic: { name: 'Dragonic Salamander', emoji: '🐉', type: 'salamander', sellPrice: 2, rarity: 'rare' },
+            crayfish: { name: 'Crayfish', emoji: '🦞', type: 'bait', sellPrice: 2, rarity: 'rare' },
+            toad: { name: 'Toad', emoji: '🐸', type: 'bait', sellPrice: 1, rarity: 'rare' },
+            frog: { name: 'Frog', emoji: '🐸', type: 'bait', sellPrice: 2, rarity: 'rare' },
+
+            // Epic Items
+            trout: { name: 'Trout', emoji: '🐟', type: 'misc', sellPrice: 2, rarity: 'epic' },
+            eel: { name: 'Eel', emoji: '🐍', type: 'misc', sellPrice: 2, rarity: 'epic' },
+            
+            // Secret Items
+            dlcSalamander: { name: 'DLC Salamander', emoji: '🏆', type: 'salamander', sellPrice: 50, rarity: 'secret' },
+            hrgSalamander: { name: 'HOG RIDERRRRR Salamander', emoji: '🐖', type: 'salamander', sellPrice: 50, rarity: 'secret' },
+            baitedHuman: { name: 'Baited Human', emoji: '👤', type: 'misc', sellPrice: 0, rarity: 'secret' }, 
+            
+            // Currency (No rarity needed)
+            token: { name: 'Token', emoji: '🟡', type: 'currency', sellPrice: 0 }
         };
         // >>>>> END INVENTORY DEFINITIONS <<<<<
 
 
-        // Function to determine drop table for main clicks (UPDATED with user logic)
-        function getDropsTable() {
-                  // Function to determine drop table for main clicks (UPDATED with correct logic)
+        // Function to determine drop table for main clicks (FIXED logic)
         function getDropsTable() {
             // Base drops available with no bait (and tokens from all)
             let currentDrops = [
@@ -367,7 +113,6 @@
 
             return currentDrops;
         }
-
 
         // Function to determine drop table for TRAPS
         function getTrapDrops() {
@@ -434,6 +179,8 @@
                     const details = itemDetails[key];
                     const itemDiv = document.createElement('div');
                     itemDiv.classList.add('encyclopedia-item');
+                    // Add the rarity class here
+                    itemDiv.classList.add(`rarity-${details.rarity}`); 
                     itemDiv.innerHTML = `${details.emoji} ${details.name} <span class="item-count">${count}</span>`;
                     inventoryContent.insertBefore(itemDiv, document.getElementById('sell-controls'));
                 }
@@ -463,6 +210,8 @@
                 // If the code is redeemed, the item is always visible in encyclopedia
                 if (count > 0 || (key === 'dlcSalamander' && dlcCodeRedeemed) || (key === 'hrgSalamander' && hrgCodeRedeemed)) {
                     itemDiv.innerHTML = `${details.emoji} ${details.name}`;
+                    // Add the rarity class here for discovered items
+                    itemDiv.classList.add(`rarity-${details.rarity}`);
                 } else {
                     itemDiv.innerHTML = `??? (Locked)`;
                     itemDiv.classList.add('item-locked');
@@ -504,6 +253,33 @@
             }
         }
 
+        function sellAllItems() {
+            let totalTokensEarned = 0;
+            let itemsSoldCount = 0;
+
+            for (const itemKey in inventory) {
+                // Check if the item is sellable (price > 0) and not a token
+                if (itemKey !== 'token' && itemDetails[itemKey].sellPrice > 0) {
+                    const quantity = inventory[itemKey];
+                    if (quantity > 0) {
+                        const details = itemDetails[itemKey];
+                        totalTokensEarned += quantity * details.sellPrice;
+                        itemsSoldCount += quantity;
+                        inventory[itemKey] = 0; // Set inventory count to zero
+                    }
+                }
+            }
+
+            if (itemsSoldCount > 0) {
+                inventory.token += totalTokensEarned;
+                messageArea.textContent = `Sold all ${itemsSoldCount} sellable items for a total of ${totalTokensEarned} tokens!`;
+            } else {
+                messageArea.textContent = "You have no sellable items to sell.";
+            }
+            
+            updateDisplay();
+        }
+
         function redeemCode() {
             const code = redeemCodeInput.value.trim().toUpperCase(); // Convert to uppercase for case-insensitivity
 
@@ -530,7 +306,8 @@
             redeemCodeInput.value = "";
         }
         
-                function clickSalamander() {
+        // --- Corrected Click Salamander Function ---
+        function clickSalamander() {
             if (!canClick) {
                 messageArea.textContent = "Cooldown active! Please wait 2 seconds.";
                 return;
@@ -538,14 +315,13 @@
             canClick = false;
             salamanderDisplay.classList.add('cooldown-active');
 
-            // Use a specific timeout to end the main cooldown
+            // Set a timer to end the cooldown
             setTimeout(() => {
                 canClick = true;
                 salamanderDisplay.classList.remove('cooldown-active');
                 messageArea.textContent = "Click the salamander to search!"; // Reset message
             }, COOLDOWN_TIME_MS);
 
-            // Rest of your existing drop logic
             totalClicks++;
             const currentDrops = getDropsTable();
             const roll = Math.random() * 100;
@@ -567,7 +343,6 @@
             updateDisplay();
         }
 
-        }
         function buyBetterBait() {
             if (inventory.token >= 10 && !betterBaitPurchased) {
                 inventory.token -= 10; betterBaitPurchased = true; betterBaitBtn.textContent = "Better Bait Purchased!"; messageArea.textContent = "Better Bait is active! New creatures and better odds are available!"; updateDisplay();
@@ -702,13 +477,7 @@
         initializePond(); 
         updateDisplay(); 
         switchTab('inventory'); // Start on inventory tab
-                // --- Initialization ---
-        initializePond(); 
-        updateDisplay(); 
-        switchTab('inventory'); // Start on inventory tab
-        
-        // Add this new line:
-        salamanderDisplay.addEventListener('click', clickSalamander);
+        salamanderDisplay.addEventListener('click', clickSalamander); // Attach the event listener
 
     </script>
 </body>
