@@ -330,26 +330,8 @@
 
         // Function to determine drop table for main clicks (UPDATED with user logic)
         function getDropsTable() {
-                // ... (end of INVENTORY DEFINITIONS section, including itemDetails) ...
-
-
-        // Function to determine drop table for main clicks (UPDATED with user logic)
+                  // Function to determine drop table for main clicks (UPDATED with correct logic)
         function getDropsTable() {
-            // ... (function code here) ...
-            return currentDrops;
-        }
-
-        // Function to determine drop table for TRAPS
-        function getTrapDrops() {
-            // ... (function code here) ...
-        }
-
-        function updateDisplay() {
-            // ... (function code here) ...
-        }
-
-        // ... (rest of the JavaScript functions) ...
-
             // Base drops available with no bait (and tokens from all)
             let currentDrops = [
                 { nameKey: 'common', chance: 40, message: 'You found a Common Salamander.' },
@@ -361,6 +343,7 @@
                 { nameKey: 'token', chance: 9.5, message: 'You found a token! 🟡' }
             ];
 
+            // Use independent 'if' statements so all purchased baits can add their drops
             if (betterBaitPurchased) { 
                 currentDrops.push(
                     { nameKey: 'toad', chance: 5, message: 'You caught a common toad! 🐸' }, 
@@ -383,6 +366,7 @@
 
             return currentDrops;
         }
+
 
         // Function to determine drop table for TRAPS
         function getTrapDrops() {
