@@ -330,6 +330,26 @@
 
         // Function to determine drop table for main clicks (UPDATED with user logic)
         function getDropsTable() {
+                // ... (end of INVENTORY DEFINITIONS section, including itemDetails) ...
+
+
+        // Function to determine drop table for main clicks (UPDATED with user logic)
+        function getDropsTable() {
+            // ... (function code here) ...
+            return currentDrops;
+        }
+
+        // Function to determine drop table for TRAPS
+        function getTrapDrops() {
+            // ... (function code here) ...
+        }
+
+        function updateDisplay() {
+            // ... (function code here) ...
+        }
+
+        // ... (rest of the JavaScript functions) ...
+
             // Base drops available with no bait (and tokens from all)
             let currentDrops = [
                 { nameKey: 'common', chance: 40, message: 'You found a Common Salamander.' },
