@@ -212,9 +212,10 @@
                     accountants: [],
                     pickaxeLevel: 1, // Start new fields with level 1 pickaxe
                 };
-                // Initialize the new field with one base and some ores
                 loadField(newFieldId);
-                initializeGameWorld(true); // Initialize the current (new) field
+                // Initialize the new field with one base and some ores
+                bases.push(new HomeBase(canvas.width / 2, canvas.height / 2)); // << ADDED THIS LINE >>
+                initializeOresForCurrentField(); // Initialize the current (new) field
             }
         }
         
@@ -223,7 +224,7 @@
             listDiv.innerHTML = '';
             Object.keys(gameState.fields).forEach(fieldId => {
                 const button = document.createElement('button');
-                button.textContent = `Field ${fieldId.split('_')[1] * 1 + 1} ${fieldId === gameState.currentFieldId ? '(Active)' : ''}`;
+                button.textContent = `Field ${fieldId.split('_') * 1 + 1} ${fieldId === gameState.currentFieldId ? '(Active)' : ''}`;
                 button.onclick = () => loadField(fieldId);
                 if (fieldId === gameState.currentFieldId) {
                     button.disabled = true;
@@ -253,7 +254,6 @@
             } else {
                 document.getElementById('gameCanvas').style.display = 'none';
             }
-            // Update UI for the geography tab whenever it's opened
             if (tabName === 'GeographyArea') {
                 updateFieldListUI();
             }
@@ -276,13 +276,11 @@
         const spawnExchangeButton = document.getElementById('spawnExchangeButton');
         const spawnExcavatorButton = document.getElementById('spawnExcavatorButton');
 
-        // References to active field data (dynamically updated by loadField)
         let units = gameState.fields[gameState.currentFieldId].units;
         let ores = gameState.fields[gameState.currentFieldId].ores;
         let bases = gameState.fields[gameState.currentFieldId].bases;
         let accountants = gameState.fields[gameState.currentFieldId].accountants;
         let pickaxeLevel = gameState.fields[gameState.currentFieldId].pickaxeLevel;
-
 
         const merchantCost = 10;
         const accountantCost = 300;
@@ -306,7 +304,7 @@
             return Math.sqrt(dx * dx + dy * dy);
         }
 
-        // --- Game Object Classes (Adjusted speeds/sizes maintained) ---
+        // --- Game Object Classes ---
         class HomeBase { constructor(x, y) { this.x = x; this.y = y; this.width = 25; this.height = 40; }
             draw() {
                 ctx.fillStyle = FILL_COLOR; ctx.strokeStyle = STROKE_COLOR; ctx.lineWidth = 1;
@@ -340,7 +338,7 @@
         class Merchant {
             constructor(x, y) {
                 this.x = x; this.y = y; this.radius = 3;
-                this.speed = 0.5; // Slower speed than previous 0.8
+                this.speed = 0.5;
                 this.target = null; this.carrying = false; this.mineSpeed = pickaxeLevel; this.mineCooldown = 0; this.returnTarget = null; this.type = 'merchant';
             }
             draw() {
@@ -420,7 +418,7 @@
         class Excavator {
             constructor(x, y) {
                 this.x = x; this.y = y; this.width = 15; this.height = 10;
-                this.speed = 0.4; // >>> Really slow movement speed <<<
+                this.speed = 0.4;
                 this.target = null; this.type = 'excavator';
             }
             draw() {
@@ -458,14 +456,19 @@
 
         // --- Game Setup and Loop ---
         
-        function initializeGameWorld(isNewField = false) {
-            // Only spawn initial structures if the field is brand new
-            if (isNewField) {
+        function initializeGameWorld() {
+            // This runs once when the game loads for the first time.
+            // Ensure the very first field has a base.
+            if (bases.length === 0) {
                  bases.push(new HomeBase(canvas.width / 2, canvas.height / 2));
             }
-            // Ensure max ores are spawned for the current field
+            initializeOresForCurrentField();
+        }
+        
+        function initializeOresForCurrentField() {
              while (ores.length < MAX_ORES) { spawnNewOre(); }
         }
+
 
         function spawnNewOre() {
             let x, y, validPlacement = false; const minDistance = 40; 
@@ -486,6 +489,7 @@
         }
 
         function update() {
+            // Check for potential nulls before calling update on active arrays
             units.forEach(unit => unit.update());
             accountants.forEach(accountant => accountant.update());
 
@@ -494,9 +498,8 @@
 
             for (let i = 0; i < minedOresCount; i++) { if(ores.length < MAX_ORES) { spawnNewOre(); } }
             
-            units.forEach(unit => {
-                if (unit.target && unit.target.health <= 0) { unit.target = null; }
-            });
+            units.forEach(unit => { if (unit.target && unit.target.health <= 0) { unit.target = null; } });
+
 
             // Update UI and Market UI elements (read from gameState.tokedillions)
             goldCountElement.textContent = gameState.tokedillions.toFixed(0);
