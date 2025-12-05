@@ -33,7 +33,6 @@
             border-radius: 8px;
             border: 1px solid yellow;
         }
-        /* Tab Navigation CSS */
         .tabs {
             list-style-type: none;
             margin: 0 0 10px 0;
@@ -108,9 +107,10 @@
             <h2>Cryptographic</h2>
             <div class="stats">
                 <p><canvas id="icon-tokedillion" class="icon" width="16" height="16"></canvas> Tokedillions: <span id="goldCount">0</span></p>
-                <p><canvas id="icon-merchant" class="icon" width="16" height="16"></canvas> Merchants: <span id="merchantCount">0</span></p>
+                <p><canvas id="icon-merchant" class="icon" width="16" height="16"></canvas> Merchants: <span id="merchantCount">0</span>/100</p>
                 <p><canvas id="icon-accountant" class="icon" width="16" height="16"></canvas> Accountants: <span id="accountantCount">0</span>/5</p>
-                <p><canvas id="icon-ore" class="icon" width="16" height="16"></canvas> Ores: <span id="oreCount">0</span>/10</p>
+                <p><canvas id="icon-ore" class="icon" width="16" height="16"></canvas> Ores: <span id="oreCount">0</span>/50</p>
+                <p>Exchanges: <span id="exchangeCount">1</span>/8</p>
             </div>
         </div>
 
@@ -121,17 +121,25 @@
         <div id="ShopArea" class="tab-content">
             <h3>Hire/Upgrades</h3>
             <div class="shop-item">
-                <p>Hire a Merchant to mine for 10 Tokedillions.</p>
+                <p>Hire a Merchant to mine for 10 Tokedillions. (Max 100)</p>
                 <button id="spawnMerchantButton" onclick="spawnMerchant()">Hire Merchant (10 Tokedillions)</button>
             </div>
             <div class="shop-item">
-                <p>Hire an Accountant. Each doubles your ore income.</p>
+                <p>Hire an Accountant. Each doubles your ore income. (Max 5)</p>
                 <button id="spawnAccountantButton" onclick="spawnAccountant()">Hire Accountant (300 Tokedillions)</button>
+            </div>
+            <div class="shop-item">
+                <p>Build an additional Exchange Booth. (Max 8)</p>
+                <button id="spawnExchangeButton" onclick="spawnExchange()">Build Exchange (1000 Tokedillions)</button>
             </div>
             <div class="shop-item">
                 <p>Upgrade Merchant Pickaxes: Level <span id="pickaxeLevel">1</span></p>
                 <p>Cost: <span id="pickaxeUpgradeCost">?</span> Tokedillions. Effect: +1 Mine Speed.</p>
                 <button id="upgradePickaxeButton" onclick="upgradePickaxe()">Upgrade Pickaxe</button>
+            </div>
+            <div class="shop-item">
+                <p>Deploy an Excavator. Instantly mines ores.</p>
+                <button id="spawnExcavatorButton" onclick="spawnExcavator()">Deploy Excavator (20000 Tokedillions)</button>
             </div>
         </div>
     </div>
@@ -165,25 +173,34 @@
         const merchantCountElement = document.getElementById('merchantCount');
         const accountantCountElement = document.getElementById('accountantCount');
         const oreCountElement = document.getElementById('oreCount');
-        const spawnMerchantButton = document.getElementById('spawnMerchantButton');
-        const spawnAccountantButton = document.getElementById('spawnAccountantButton');
+        const maxOreCountElement = document.getElementById('maxOreCount');
+        const exchangeCountElement = document.getElementById('exchangeCount');
         const pickaxeLevelElement = document.getElementById('pickaxeLevel');
         const pickaxeUpgradeCostElement = document.getElementById('pickaxeUpgradeCost');
+        const spawnMerchantButton = document.getElementById('spawnMerchantButton');
+        const spawnAccountantButton = document.getElementById('spawnAccountantButton');
         const upgradePickaxeButton = document.getElementById('upgradePickaxeButton');
+        const spawnExchangeButton = document.getElementById('spawnExchangeButton');
+        const spawnExcavatorButton = document.getElementById('spawnExcavatorButton');
 
         let gold = 50;
-        let merchants = [];
+        let units = []; // Combined array for merchants and excavators
         let ores = [];
+        let bases = [];
         let accountants = [];
+
         const merchantCost = 10;
         const accountantCost = 300;
-        const HOME_X = 30;
-        const HOME_Y = canvas.height / 2;
+        const exchangeCost = 1000;
+        const excavatorCost = 20000;
+        
         const FILL_COLOR = '#000000';
         const STROKE_COLOR = '#FFFF00';
-        const MAX_ORES = 10;
+        const MAX_ORES = 50; 
         const MAX_MERCHANTS_PER_ORE = 3;
         const MAX_ACCOUNTANTS = 5;
+        const MAX_BASES = 8;
+        const MAX_MERCHANTS = 100;
         const BASE_ORE_VALUE = 15;
         let pickaxeLevel = 1;
         let pickaxeUpgradeBaseCost = 50;
@@ -200,25 +217,27 @@
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.width = 60;
-                this.height = 80;
+                this.width = 25;
+                this.height = 40;
             }
             draw() {
                 ctx.fillStyle = FILL_COLOR;
                 ctx.strokeStyle = STROKE_COLOR;
-                ctx.lineWidth = 2;
-                ctx.fillRect(this.x, this.y - this.height / 2, this.width, this.height);
-                ctx.strokeRect(this.x, this.y - this.height / 2, this.width, this.height);
+                ctx.lineWidth = 1;
+                ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+                ctx.strokeRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
                 ctx.beginPath();
-                ctx.moveTo(this.x, this.y - this.height / 2);
-                ctx.lineTo(this.x + this.width / 2, this.y - this.height / 2 - 20);
-                ctx.lineTo(this.x + this.width, this.y - this.height / 2);
+                ctx.moveTo(this.x - this.width / 2, this.y - this.height / 2);
+                ctx.lineTo(this.x, this.y - this.height / 2 - 10);
+                ctx.lineTo(this.x + this.width / 2, this.y - this.height / 2);
                 ctx.closePath();
                 ctx.fill();
                 ctx.stroke();
                 ctx.fillStyle = STROKE_COLOR;
                 ctx.textAlign = 'center';
-                ctx.fillText("Exchange", this.x + this.width / 2, this.y + 5);
+                ctx.font = '6px monospace';
+                ctx.fillText("Exch", this.x, this.y + 3);
+                ctx.font = '10px monospace';
             }
         }
 
@@ -226,8 +245,8 @@
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.radius = 12;
-                this.health = 40;
+                this.radius = 5;
+                this.health = 20;
             }
             draw() {
                 ctx.beginPath();
@@ -244,7 +263,9 @@
                 ctx.stroke();
                 ctx.fillStyle = STROKE_COLOR;
                 ctx.textAlign = 'center';
-                ctx.fillText(this.health, this.x, this.y + 3 + this.radius);
+                ctx.font = '6px monospace';
+                ctx.fillText(this.health, this.x, this.y + 2 + this.radius);
+                ctx.font = '10px monospace';
             }
         }
 
@@ -252,13 +273,14 @@
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.radius = 8;
-                this.speed = 1.5;
+                this.radius = 3;
+                this.speed = 0.8; 
                 this.target = null;
                 this.carrying = false;
-                this.mineSpeed = pickaxeLevel;
+                this.mineSpeed = pickaxeLevel; 
                 this.mineCooldown = 0;
-                this.returnTarget = { x: HOME_X + homeBase.width / 2, y: HOME_Y };
+                this.returnTarget = null;
+                this.type = 'merchant';
             }
             draw() {
                 ctx.beginPath();
@@ -268,12 +290,10 @@
                 ctx.fill();
                 ctx.stroke();
                 ctx.closePath();
-                ctx.strokeRect(this.x - 5, this.y - 12, 10, 8);
+                ctx.strokeRect(this.x - 2, this.y - 4, 4, 3); 
                 ctx.beginPath();
-                ctx.moveTo(this.x + 5, this.y + 5);
-                ctx.lineTo(this.x + 15, this.y - 5);
-                ctx.moveTo(this.x + 15 - 3, this.y - 5 - 3);
-                ctx.lineTo(this.x + 15 + 3, this.y - 5 + 3);
+                ctx.moveTo(this.x + 2, this.y + 2);
+                ctx.lineTo(this.x + 5, this.y - 1);
                 ctx.strokeStyle = STROKE_COLOR;
                 ctx.lineWidth = 1;
                 ctx.stroke();
@@ -282,11 +302,12 @@
                 this.mineSpeed = pickaxeLevel;
                 
                 if (!this.carrying) {
+                    this.returnTarget = null; 
                     if (!this.target || this.target.health <= 0) {
                         this.findNearestOre();
                     }
                     if (this.target) {
-                        if (distanceBetween(this, this.target) < this.target.radius + this.radius + 5) {
+                        if (distanceBetween(this, this.target) < this.target.radius + this.radius + 2) {
                             if (this.mineCooldown <= 0) {
                                 this.target.health -= this.mineSpeed;
                                 this.mineCooldown = 1000;
@@ -300,11 +321,18 @@
                         }
                     }
                 } else {
-                    this.moveToTarget(this.returnTarget, false);
-                    if (distanceBetween(this, this.returnTarget) < 20) {
-                        const earnings = BASE_ORE_VALUE * Math.pow(2, accountants.length);
-                        gold += earnings;
-                        this.carrying = false;
+                    if (!this.returnTarget) {
+                        this.findNearestBase(); 
+                    }
+
+                    if (this.returnTarget) {
+                         this.moveToTarget(this.returnTarget, false);
+                        if (distanceBetween(this, this.returnTarget) < 10) {
+                            const earnings = BASE_ORE_VALUE * Math.pow(2, accountants.length);
+                            gold += earnings;
+                            this.carrying = false; 
+                            this.returnTarget = null;
+                        }
                     }
                 }
 
@@ -315,8 +343,11 @@
             findNearestOre() {
                let closestOre = null;
                 let minDistance = Infinity;
+                // Use units.filter now to count merchants
+                const activeMerchants = units.filter(u => u.type === 'merchant' && !u.carrying); 
+
                 for (const ore of ores) {
-                    const minersOnOre = merchants.filter(m => m.target === ore && !m.carrying).length;
+                    const minersOnOre = activeMerchants.filter(m => m.target === ore).length;
                     if (ore.health > 0 && minersOnOre < MAX_MERCHANTS_PER_ORE) {
                         const distance = distanceBetween(this, ore);
                         if (distance < minDistance) {
@@ -326,6 +357,18 @@
                     }
                 }
                 this.target = closestOre;
+            }
+            findNearestBase() {
+                let closestBase = null;
+                let minDistance = Infinity;
+                for (const base of bases) {
+                    const distance = distanceBetween(this, base);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestBase = base;
+                    }
+                }
+                this.returnTarget = closestBase;
             }
             moveToTarget(target, avoidObstacles = false) {
                 let dx = target.x - this.x;
@@ -337,7 +380,7 @@
                     if (avoidObstacles) {
                         for (const obstacle of ores) {
                             if (obstacle === target || obstacle === this) continue;
-                            if (distanceBetween(this, obstacle) < obstacle.radius + this.radius + 5) {
+                            if (distanceBetween(this, obstacle) < obstacle.radius + this.radius + 2) {
                                 const odx = this.x - obstacle.x;
                                 const ody = this.y - obstacle.y;
                                 dx += odx / distanceBetween(this, obstacle);
@@ -355,6 +398,7 @@
         }
 
         class Accountant {
+             // ... (Same as previous version) ...
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
@@ -363,75 +407,245 @@
                 ctx.fillStyle = FILL_COLOR;
                 ctx.strokeStyle = STROKE_COLOR;
                 ctx.lineWidth = 1;
-                ctx.strokeRect(this.x - 10, this.y, 20, 10);
+                ctx.strokeRect(this.x - 6, this.y, 12, 6); 
                 ctx.beginPath();
-                ctx.arc(this.x, this.y - 5, 5, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y - 3, 3, 0, Math.PI * 2);
                 ctx.stroke();
                 ctx.beginPath();
-                ctx.arc(this.x, this.y - 12, 3, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y - 8, 1.5, 0, Math.PI * 2);
                 ctx.stroke();
                 ctx.fillStyle = STROKE_COLOR;
                 ctx.textAlign = 'center';
-                ctx.fillText("ACC", this.x, this.y + 25);
+                ctx.font = '6px monospace';
+                ctx.fillText("ACC", this.x, this.y + 14);
+                ctx.font = '10px monospace';
             }
             update() {}
+        }
+        
+        class Excavator {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 15;
+                this.height = 10;
+                this.speed = 1.2;
+                this.target = null;
+                this.type = 'excavator';
+            }
+            draw() {
+                ctx.fillStyle = FILL_COLOR;
+                ctx.strokeStyle = STROKE_COLOR;
+                ctx.lineWidth = 1;
+                // Main body (rectangle)
+                ctx.strokeRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+                ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+
+                // Slanted triangle on front (bucket/blade)
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.width / 2, this.y - this.height / 2);
+                ctx.lineTo(this.x + this.width / 2 + 5, this.y); // Slanted point
+                ctx.lineTo(this.x + this.width / 2, this.y + this.height / 2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+            update() {
+                if (!this.target || this.target.health <= 0) {
+                    this.findNearestOre();
+                }
+                
+                if (this.target) {
+                    // Excavator instantly mines on collision
+                    if (distanceBetween(this, this.target) < this.width / 2 + this.target.radius + 5) {
+                        // Instant mine
+                        this.target.health = 0; 
+                        const earnings = BASE_ORE_VALUE * Math.pow(2, accountants.length);
+                        gold += earnings;
+                        this.target = null; // Find new target next frame
+                    } else {
+                        this.moveToTarget(this.target);
+                    }
+                }
+            }
+            findNearestOre() {
+                let closestOre = null;
+                let minDistance = Infinity;
+                for (const ore of ores) {
+                    if (ore.health > 0) {
+                        const distance = distanceBetween(this, ore);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            closestOre = ore;
+                        }
+                    }
+                }
+                this.target = closestOre;
+            }
+            moveToTarget(target) {
+                // Excavators ignore obstacles (too powerful!)
+                let dx = target.x - this.x;
+                let dy = target.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance > 0) {
+                    dx /= distance;
+                    dy /= distance;
+                    this.x += dx * this.speed;
+                    this.y += dy * this.speed;
+                }
+            }
         }
 
 
         // --- Game Setup and Loop ---
-
-        const homeBase = new HomeBase(HOME_X, HOME_Y);
-
-        function spawnInitialOres() {
-            while (ores.length < MAX_ORES) {
+        
+        function initializeGameWorld() {
+             // Start with one base in the center
+             bases.push(new HomeBase(canvas.width / 2, canvas.height / 2));
+             while (ores.length < MAX_ORES) {
                 spawnNewOre();
             }
         }
 
         function spawnNewOre() {
-            const x = Math.random() * (canvas.width - 100) + 100;
-            const y = Math.random() * (canvas.height - 40) + 20;
-            ores.push(new Ore(x, y));
+            let x, y, validPlacement = false;
+            const minDistance = 40; 
+            while (ores.length < MAX_ORES && !validPlacement) {
+                x = Math.random() * canvas.width;
+                y = Math.random() * canvas.height;
+                validPlacement = true;
+                for(const base of bases) {
+                    if (distanceBetween({x,y}, base) < minDistance) {
+                        validPlacement = false;
+                        break;
+                    }
+                }
+            }
+            if(validPlacement) {
+                 ores.push(new Ore(x, y));
+            }
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            homeBase.draw();
+            bases.forEach(base => base.draw());
             ores.forEach(ore => ore.draw());
-            merchants.forEach(merchant => merchant.draw());
+            // Draw all units
+            units.forEach(unit => unit.draw());
             accountants.forEach(accountant => accountant.draw());
         }
 
         function update() {
-            merchants.forEach(merchant => merchant.update());
+            // Update all units
+            units.forEach(unit => unit.update());
             accountants.forEach(accountant => accountant.update());
 
             const minedOresCount = ores.filter(ore => ore.health <= 0).length;
             ores = ores.filter(ore => ore.health > 0);
 
             for (let i = 0; i < minedOresCount; i++) {
-                spawnNewOre();
+                if(ores.length < MAX_ORES) {
+                   spawnNewOre();
+                }
             }
+            
+            // Filter out dead ores from excavator targets
+            units.forEach(unit => {
+                if (unit.target && unit.target.health <= 0) {
+                    unit.target = null;
+                }
+            });
+
 
             // Update UI and Market UI elements
             goldCountElement.textContent = gold.toFixed(0);
-            merchantCountElement.textContent = merchants.length;
+            merchantCountElement.textContent = units.filter(u => u.type === 'merchant').length;
             accountantCountElement.textContent = accountants.length;
             oreCountElement.textContent = ores.length;
+            exchangeCountElement.textContent = bases.length;
             pickaxeLevelElement.textContent = pickaxeLevel;
             const currentUpgradeCost = pickaxeUpgradeBaseCost * Math.pow(2, pickaxeLevel - 1);
             pickaxeUpgradeCostElement.textContent = currentUpgradeCost;
 
             // Update button disabled states
-            spawnMerchantButton.disabled = gold < merchantCost;
+            spawnMerchantButton.disabled = gold < merchantCost || units.filter(u => u.type === 'merchant').length >= MAX_MERCHANTS;
             spawnAccountantButton.disabled = gold < accountantCost || accountants.length >= MAX_ACCOUNTANTS;
             upgradePickaxeButton.disabled = gold < currentUpgradeCost;
+            spawnExchangeButton.disabled = gold < exchangeCost || bases.length >= MAX_BASES;
+            spawnExcavatorButton.disabled = gold < excavatorCost;
             
             drawSidebarIcons();
         }
 
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- User Interaction Functions ---
+        function spawnMerchant() {
+            if (gold >= merchantCost && units.filter(u => u.type === 'merchant').length < MAX_MERCHANTS) {
+                gold -= merchantCost;
+                units.push(new Merchant(canvas.width / 2, canvas.height / 2));
+            }
+        }
+
+        function spawnAccountant() {
+            if (gold >= accountantCost && accountants.length < MAX_ACCOUNTANTS) {
+                gold -= accountantCost;
+                const angle = (accountants.length / MAX_ACCOUNTANTS) * Math.PI * 2;
+                const radiusOffset = 25; 
+                const xPos = canvas.width / 2 + Math.cos(angle) * radiusOffset;
+                const yPos = canvas.height / 2 + Math.sin(angle) * radiusOffset;
+                accountants.push(new Accountant(xPos, yPos));
+            }
+        }
+        
+        function spawnExcavator() {
+             if (gold >= excavatorCost) {
+                gold -= excavatorCost;
+                 // Spawn near the center base
+                units.push(new Excavator(canvas.width / 2, canvas.height / 2));
+            }
+        }
+
+
+        function upgradePickaxe() {
+            const currentUpgradeCost = pickaxeUpgradeBaseCost * Math.pow(2, pickaxeLevel - 1);
+            if (gold >= currentUpgradeCost) {
+                gold -= currentUpgradeCost;
+                pickaxeLevel += 1;
+            }
+        }
+
+        function spawnExchange() {
+            if (gold >= exchangeCost && bases.length < MAX_BASES) {
+                gold -= exchangeCost;
+                let x, y, validPlacement = false;
+                const minDistance = 50;
+                while(!validPlacement) {
+                    x = Math.random() * canvas.width;
+                    y = Math.random() * canvas.height;
+                    validPlacement = true;
+                    for(const base of bases) {
+                        if (distanceBetween({x,y}, base) < minDistance) {
+                            validPlacement = false;
+                            break;
+                        }
+                    }
+                    for(const ore of ores) {
+                         if (distanceBetween({x,y}, ore) < minDistance) {
+                            validPlacement = false;
+                            break;
+                        }
+                    }
+                }
+                bases.push(new HomeBase(x, y));
+            }
+        }
+
         function drawSidebarIcons() {
-            // Draw Tokedillion Icon (Black circle with yellow outline)
             const ctxT = document.getElementById('icon-tokedillion').getContext('2d');
             ctxT.clearRect(0, 0, 16, 16);
             ctxT.beginPath();
@@ -441,7 +655,6 @@
             ctxT.fill();
             ctxT.stroke();
             
-            // Draw Merchant Icon (Simplified body circle)
             const ctxM = document.getElementById('icon-merchant').getContext('2d');
             ctxM.clearRect(0, 0, 16, 16);
             ctxM.beginPath();
@@ -451,16 +664,14 @@
             ctxM.fill();
             ctxM.stroke();
 
-            // Draw Accountant Icon (Simplified head/desk)
             const ctxA = document.getElementById('icon-accountant').getContext('2d');
             ctxA.clearRect(0, 0, 16, 16);
             ctxA.strokeStyle = STROKE_COLOR;
-            ctxA.strokeRect(3, 10, 10, 4); // Desk
-            ctxA.beginPath(); // Head
+            ctxA.strokeRect(3, 10, 10, 4); 
+            ctxA.beginPath(); 
             ctxA.arc(8, 7, 4, 0, Math.PI * 2);
             ctxA.stroke();
 
-            // Draw Ore Icon (Simplified rock shape)
             const ctxO = document.getElementById('icon-ore').getContext('2d');
             ctxO.clearRect(0, 0, 16, 16);
             ctxO.beginPath();
@@ -482,40 +693,13 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // --- User Interaction Functions ---
-        function spawnMerchant() {
-            if (gold >= merchantCost) {
-                gold -= merchantCost;
-                merchants.push(new Merchant(HOME_X + homeBase.width / 2, HOME_Y));
-            }
-        }
-
-        function spawnAccountant() {
-            if (gold >= accountantCost && accountants.length < MAX_ACCOUNTANTS) {
-                gold -= accountantCost;
-                const xPos = HOME_X + homeBase.width + 10 + (accountants.length % 2) * 25;
-                const yPos = HOME_Y + (accountants.length % 2 == 0 ? -10 : 10);
-                accountants.push(new Accountant(xPos, yPos));
-            }
-        }
-
-        function upgradePickaxe() {
-            const currentUpgradeCost = pickaxeUpgradeBaseCost * Math.pow(2, pickaxeLevel - 1);
-            if (gold >= currentUpgradeCost) {
-                gold -= currentUpgradeCost;
-                pickaxeLevel += 1;
-            }
-        }
-
         // Initialize and Start Game
-        spawnInitialOres();
+        initializeGameWorld();
         gameLoop();
         
-        // Manually trigger initial tab display
         document.getElementById('MiningArea').style.display = 'block';
         document.getElementById('gameCanvas').style.display = 'block';
-        drawSidebarIcons(); // Draw icons immediately on load
+        drawSidebarIcons();
     </script>
 </body>
 </html>
-
