@@ -48,84 +48,35 @@
             padding: 20px;
             box-sizing: border-box;
         }
-        #start-screen h1, #start-screen label { margin-bottom: 10px; }
+        #start-screen h1, #start-screen label, #start-screen p { margin-bottom: 10px; }
         #start-screen input { padding: 10px; font-size: 1em; margin-bottom: 20px; }
         .color-option { width: 40px; height: 40px; cursor: pointer; border: 2px solid transparent; margin: 5px; display: inline-block; }
         .color-option.selected { border-color: white; }
+        .size-option { padding: 10px; margin: 5px; cursor: pointer; background-color: #444; border: 1px solid white; }
         #start-button { padding: 10px 20px; font-size: 1.2em; margin-top: 20px; }
 
         /* --- Controls & Info Styles --- */
-
-        #side-controls-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: stretch;
-        }
-
-        #movement-controls-container {
-            margin-top: 15px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        #movement-controls-container button, #side-controls-container button {
-            padding: 10px 15px;
-            font-size: 1em;
-            cursor: pointer;
-            background-color: #f0f0f0;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            user-select: none;
-        }
-
-        #left-btn, #right-btn {
-            font-size: 2em;
-            width: 80px;
-            height: 80px;
-        }
-        #jump-btn {
-            font-size: 1.5em;
-            width: 120px;
-            height: 80px;
-        }
-
+        #side-controls-container { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+        #movement-controls-container { margin-top: 15px; display: flex; gap: 10px; justify-content: center; }
+        #movement-controls-container button, #side-controls-container button { padding: 10px 15px; font-size: 1em; cursor: pointer; background-color: #f0f0f0; border: 2px solid #ccc; border-radius: 8px; user-select: none; }
+        #left-btn, #right-btn { font-size: 2em; width: 80px; height: 80px; }
+        #jump-btn { font-size: 1.5em; width: 120px; height: 80px; }
         #delete-btn.active { background-color: #e74c3c; color: white; border-color: #c0392b; }
         #portal-btn.active { background-color: #9b59b6; color: white; border-color: #8e44ad; }
         #death-btn.active { background-color: #a00; color: white; border-color: #700; }
         #checkpoint-btn.active { background-color: #f1c40f; color: black; border-color: #d35400; }
-
-        #info-message {
-            margin-top: 10px;
-            font-size: 0.8em;
-            color: #ccc;
-            text-align: center;
-        }
-        #game-message-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: red;
-            font-size: 4em;
-            font-weight: bold;
-            display: none;
-            pointer-events: none;
-            z-index: 10;
-        }
+        #info-message { margin-top: 10px; font-size: 0.8em; color: #ccc; text-align: center; }
+        #game-message-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 4em; font-weight: bold; display: none; pointer-events: none; z-index: 10; }
     </style>
 </head>
 <body>
     <div id="main-layout-container">
-        <!-- Left Side: Canvas and Movement Controls -->
         <div>
             <div id="game-container">
-                <!-- CANVAS SIZE ADJUSTED TO 512x400 (32x25 grid @ 16px) -->
+                <!-- Canvas fixed at 512x400 -->
                 <canvas id="gameCanvas" width="512" height="400"></canvas>
                 <div id="game-message-overlay">YOU DED NOW</div>
                 
-                <!-- Start Screen Overlay -->
                 <div id="start-screen">
                     <h1>Square Jumper Setup</h1>
                     <label for="username-input">Enter Username:</label>
@@ -139,22 +90,25 @@
                         <span class="color-option" style="background-color: green;" data-color="green" onclick="selectColor('green')"></span>
                         <span class="color-option" style="background-color: black;" data-color="black" onclick="selectColor('black')"></span>
                     </div>
+
+                    <p>Choose Grid Size:</p>
+                    <div id="size-picker">
+                        <button class="size-option selected" data-size="big" onclick="selectSize('big')">Big Grid (16px squares)</button>
+                        <button class="size-option" data-size="small" onclick="selectSize('small')">Small Grid (32px squares)</button>
+                    </div>
                     
                     <button id="start-button" onclick="startGame()">Start Game</button>
                 </div>
             </div>
             
-            <!-- Movement Buttons Below Canvas -->
             <div id="movement-controls-container">
                 <button id="left-btn" onmousedown="setKey(event, 'left', true)" onmouseup="setKey(event, 'left', false)" ontouchstart="setKey(event, 'left', true)" ontouchend="setKey(event, 'left', false)">←</button>
                 <button id="jump-btn" onmousedown="setKey(event, 'jump', true)" onmouseup="setKey(event, 'jump', false)" ontouchstart="setKey(event, 'jump', true)" ontouchend="setKey(event, 'jump', false)">Jump</button>
                 <button id="right-btn" onmousedown="setKey(event, 'right', true)" onmouseup="setKey(event, 'right', false)" ontouchstart="setKey(event, 'right', true)" ontouchend="setKey(event, 'right', false)">→</button>
             </div>
             <div id="info-message">Left-click the grid to place blocks/items in the selected mode.</div>
-
         </div>
 
-        <!-- Right Side: Mode/Build Buttons -->
         <div id="side-controls-container">
             <button id="delete-btn" onclick="toggleDeleteMode()">Delete Mode: OFF</button>
             <button id="portal-btn" onclick="togglePortalMode()">Portal Mode: OFF</button>
@@ -164,51 +118,77 @@
     </div>
     
     <script>
-        // GRID SIZE CHANGED HERE TO 16
-        const GRID_SIZE = 16; 
-
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        const deleteBtn = document.getElementById("delete-btn");
-        const portalBtn = document.getElementById("portal-btn");
-        const deathBtn = document.getElementById("death-btn");
-        const checkpointBtn = document.getElementById("checkpoint-btn");
-        const startScreen = document.getElementById("start-screen");
-        const gameMessageOverlay = document.getElementById("game-message-overlay");
-        const usernameInput = document.getElementById("username-input");
-
-        const PLAYER_SIZE = GRID_SIZE - 2; // Keep player slightly smaller than grid for visibility
-        const GRAVITY = 0.5;
-        const JUMP_FORCE = -8; // Adjusted jump force for smaller scale
-        const MOVE_SPEED = 4; // Adjusted move speed for smaller scale
-        const initialSpawnX = GRID_SIZE;
-        const initialSpawnY = canvas.height - GRID_SIZE * 2;
-
-        let player = {
-            x: initialSpawnX, y: initialSpawnY, width: PLAYER_SIZE, height: PLAYER_SIZE,
-            velX: 0, velY: 0, isJumping: false, groundY: canvas.height - GRID_SIZE,
-            color: 'red',
-            username: 'Player',
-            spawnX: initialSpawnX,
-            spawnY: initialSpawnY
-        };
-        let keys = { left: false, right: false, jump: false };
+        let GRID_SIZE; 
+        let PLAYER_SIZE;
+        let GRAVITY;
+        let JUMP_FORCE;
+        let MOVE_SPEED;
+        let initialSpawnX;
+        let initialSpawnY;
+        let player = {};
         let map = [];
         let portals = [];
         let deathBlocks = [];
         let checkpoints = [];
-
         let deleteMode = false;
         let portalMode = false;
         let deathMode = false;
         let checkpointMode = false;
         let selectedColor = 'red';
+        let selectedSize = 'big'; // Default size
         let canTeleport = true;
         let isDead = false;
+        let keys = { left: false, right: false, jump: false };
 
-        // Create the floor
-        for (let i = 0; i < canvas.width / GRID_SIZE; i++) {
-            map.push({ x: i * GRID_SIZE, y: canvas.height - GRID_SIZE, width: GRID_SIZE, height: GRID_SIZE, type: 'normal' });
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const startScreen = document.getElementById("start-screen");
+        const gameMessageOverlay = document.getElementById("game-message-overlay");
+        const usernameInput = document.getElementById("username-input");
+        const deleteBtn = document.getElementById("delete-btn");
+        const portalBtn = document.getElementById("portal-btn");
+        const deathBtn = document.getElementById("death-btn");
+        const checkpointBtn = document.getElementById("checkpoint-btn");
+
+        function updateGameParameters() {
+            // Keep canvas dimensions fixed, just change the size of the grid units
+            canvas.width = 512;
+            canvas.height = 400;
+
+            if (selectedSize === 'small') {
+                GRID_SIZE = 32;
+            } else { // big
+                GRID_SIZE = 16;
+            }
+
+            // Recalculate dependent variables
+            PLAYER_SIZE = GRID_SIZE - 2;
+            // Physics variables scaled based on the new GRID_SIZE relative to the original 16px size
+            const scaleFactor = GRID_SIZE / 16;
+            JUMP_FORCE = -8 * scaleFactor; 
+            MOVE_SPEED = 4 * scaleFactor; 
+            GRAVITY = 0.5 * scaleFactor;
+
+            initialSpawnX = GRID_SIZE;
+            initialSpawnY = canvas.height - GRID_SIZE * 2;
+
+            // Reset player parameters and map (clears old map)
+            player = {
+                x: initialSpawnX, y: initialSpawnY, width: PLAYER_SIZE, height: PLAYER_SIZE,
+                velX: 0, velY: 0, isJumping: false, groundY: canvas.height - GRID_SIZE,
+                color: selectedColor, username: usernameInput.value.trim() || 'Player',
+                spawnX: initialSpawnX, spawnY: initialSpawnY
+            };
+            
+            map = [];
+            portals = [];
+            deathBlocks = [];
+            checkpoints = [];
+
+            // Re-create the floor for the new canvas size
+            for (let i = 0; i < canvas.width / GRID_SIZE; i++) {
+                map.push({ x: i * GRID_SIZE, y: canvas.height - GRID_SIZE, width: GRID_SIZE, height: GRID_SIZE, type: 'normal' });
+            }
         }
 
         // --- Game Setup Functions ---
@@ -220,12 +200,16 @@
             document.querySelector(`.color-option[data-color="${color}"]`).classList.add('selected');
         }
 
+        function selectSize(size) {
+            selectedSize = size;
+            document.querySelectorAll('.size-option').forEach(button => {
+                button.classList.remove('selected');
+            });
+            document.querySelector(`.size-option[data-size="${size}"]`).classList.add('selected');
+        }
+
         function startGame() {
-            const username = usernameInput.value.trim();
-            if (username) {
-                player.username = username;
-            }
-            player.color = selectedColor;
+            updateGameParameters(); // Set all sizes and reset the map/player based on selection
             startScreen.style.display = 'none';
             gameLoop();
         }
@@ -333,7 +317,7 @@
                 if (isColliding(player, portal)) {
                     canTeleport = false;
                     const destinationPortal = portals[1 - index];
-                    player.x = destinationPortal.x + destinationPortal.width + 2; // Small buffer for new grid size
+                    player.x = destinationPortal.x + destinationPortal.width + 2;
                     player.y = destinationPortal.y; 
                     setTimeout(() => { canTeleport = true; }, 300);
                 }
@@ -372,20 +356,9 @@
 
         function update() {
             if (isDead) return;
-
             checkPortalCollision(); 
-
-            deathBlocks.forEach(block => {
-                if (isColliding(player, block)) {
-                    handleDeath();
-                }
-            });
-
-            checkpoints.forEach(block => {
-                if (isColliding(player, block)) {
-                    setCheckpoint(block);
-                }
-            });
+            deathBlocks.forEach(block => { if (isColliding(player, block)) { handleDeath(); } });
+            checkpoints.forEach(block => { if (isColliding(player, block)) { setCheckpoint(block); } });
 
             if (keys.left) player.velX = -MOVE_SPEED;
             if (keys.right) player.velX = MOVE_SPEED;
@@ -420,61 +393,23 @@
         }
 
         function draw() {
-            if (isDead) {
-                ctx.fillStyle = 'black';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            } else {
+            if (isDead) { ctx.fillStyle = 'black'; ctx.fillRect(0, 0, canvas.width, canvas.height); } 
+            else {
                 ctx.fillStyle = '#eee';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-            
-            if (isDead) {
-                // Skip drawing game elements during the "dead" blackout screen
-            } else {
                 ctx.strokeStyle = '#ccc';
-                // Line width needs to be adjusted for the smaller grid size to look good
                 ctx.lineWidth = 0.5; 
-                for (let i = 0; i < canvas.width / GRID_SIZE; i++) {
-                    ctx.beginPath(); ctx.moveTo(i * GRID_SIZE, 0); ctx.lineTo(i * GRID_SIZE, canvas.height); ctx.stroke();
-                }
-                for (let i = 0; i < canvas.height / GRID_SIZE; i++) {
-                    ctx.beginPath(); ctx.moveTo(0, i * GRID_SIZE); ctx.lineTo(canvas.width, i * GRID_SIZE); ctx.stroke();
-                }
-                ctx.lineWidth = 1; // Reset default line width
+                for (let i = 0; i < canvas.width / GRID_SIZE; i++) { ctx.beginPath(); ctx.moveTo(i * GRID_SIZE, 0); ctx.lineTo(i * GRID_SIZE, canvas.height); ctx.stroke(); }
+                for (let i = 0; i < canvas.height / GRID_SIZE; i++) { ctx.beginPath(); ctx.moveTo(0, i * GRID_SIZE); ctx.lineTo(canvas.width, i * GRID_SIZE); ctx.stroke(); }
+                ctx.lineWidth = 1;
 
-
-                ctx.fillStyle = 'gray';
-                map.forEach(block => { ctx.fillRect(block.x, block.y, block.width, block.height); });
-                portals.forEach(block => {
-                    ctx.fillStyle = 'purple';
-                    ctx.fillRect(block.x, block.y, block.width, block.height);
-                    ctx.beginPath();
-                    ctx.arc(block.x + block.width / 2, block.y + block.height / 2, block.width / 4, 0, 2 * Math.PI);
-                    ctx.fillStyle = 'white';
-                    ctx.fill();
-                });
-                deathBlocks.forEach(block => {
-                    ctx.fillStyle = 'red';
-                    ctx.fillRect(block.x, block.y, block.width, block.height);
-                    ctx.strokeStyle = 'black';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(block.x, block.y); ctx.lineTo(block.x + block.width, block.y + block.height);
-                    ctx.moveTo(block.x + block.width, block.y); ctx.lineTo(block.x, block.y + block.height);
-                    ctx.stroke();
-                });
-                checkpoints.forEach(block => {
-                    ctx.fillStyle = 'yellow';
-                    ctx.fillRect(block.x, block.y, block.width, block.height);
-                    ctx.beginPath();
-                    ctx.arc(block.x + block.width / 2, block.y + block.height / 2, block.width / 4, 0, 2 * Math.PI);
-                    ctx.fillStyle = 'green';
-                    ctx.fill();
-                });
+                ctx.fillStyle = 'gray'; map.forEach(block => { ctx.fillRect(block.x, block.y, block.width, block.height); });
+                portals.forEach(block => { ctx.fillStyle = 'purple'; ctx.fillRect(block.x, block.y, block.width, block.height); ctx.beginPath(); ctx.arc(block.x + block.width / 2, block.y + block.height / 2, block.width / 4, 0, 2 * Math.PI); ctx.fillStyle = 'white'; ctx.fill(); });
+                deathBlocks.forEach(block => { ctx.fillStyle = 'red'; ctx.fillRect(block.x, block.y, block.width, block.height); ctx.strokeStyle = 'black'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(block.x, block.y); ctx.lineTo(block.x + block.width, block.y + block.height); ctx.moveTo(block.x + block.width, block.y); ctx.lineTo(block.x, block.y + block.height); ctx.stroke(); });
+                checkpoints.forEach(block => { ctx.fillStyle = 'yellow'; ctx.fillRect(block.x, block.y, block.width, block.height); ctx.beginPath(); ctx.arc(block.x + block.width / 2, block.y + block.height / 2, block.width / 4, 0, 2 * Math.PI); ctx.fillStyle = 'green'; ctx.fill(); });
 
                 ctx.fillStyle = player.color;
                 ctx.fillRect(player.x, player.y, player.width, player.height);
-
                 ctx.fillStyle = 'black';
                 ctx.font = '12px sans-serif';
                 ctx.textAlign = 'center';
