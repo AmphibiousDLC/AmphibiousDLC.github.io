@@ -151,8 +151,8 @@
         // --- Interaction Handlers (Unified for Mouse and Touch) ---
 
         function getCoordsInGameArea(e) {
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const clientX = e.touches ? e.touches.clientX : e.clientX;
+            const clientY = e.touches ? e.touches.clientY : e.clientY;
             
             const rect = gameArea.getBoundingClientRect();
             return {
@@ -191,7 +191,6 @@
                 draggedBall.x = Math.max(0, Math.min(gameArea.clientWidth - BALL_SIZE, draggedBall.x));
                 draggedBall.y = Math.max(0, Math.min(gameArea.clientHeight - BALL_SIZE, draggedBall.y));
                 
-                // Store throw velocity based on recent movement
                 draggedBall.vx = dx * THROW_FORCE_MULTIPLIER;
                 draggedBall.vy = dy * THROW_FORCE_MULTIPLIER;
                 
@@ -214,7 +213,7 @@
         }
 
 
-        // --- Physics Update Loop (FIXED) ---
+        // --- Physics Update Loop (FIXED CALCULATION) ---
         function updatePhysics() {
             const gameAreaHeight = gameArea.clientHeight;
             const gameAreaWidth = gameArea.clientWidth;
@@ -223,7 +222,7 @@
 
                 if (!ball.isDragging) {
                     ball.vy += GRAVITY;
-                    // FIX: This line was incorrect in the last version.
+                    // CORRECT CALCULATION:
                     ball.y += ball.vy; 
                     ball.x += ball.vx;
 
@@ -242,11 +241,9 @@
                         ball.vy *= -DAMPING; 
                         
                         if (Math.abs(ball.vy) < 1 && Math.abs(ball.vx) < 0.1) {
-                             // Stop completely if almost stationary on the floor
                             ball.vy = 0;
                             ball.vx = 0;
                         } else if (ball.vy === 0) {
-                            // Apply slight friction if just sliding along the bottom
                             ball.vx *= FRICTION;
                         }
                     }
