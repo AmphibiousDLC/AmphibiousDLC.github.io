@@ -2,272 +2,682 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fixed Interactive Physics Ball Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptographic</title>
     <style>
-        /* Ensures the body takes up the full mobile viewport height */
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
+        :root {
+            --bg-color: #000;
+            --text-color: #FFFF00; /* Default color: Yellow */
+            --border-color: #FFFF00;
         }
+
         body {
-            font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px; 
-            background-color: #f0f0f0;
-            overflow: hidden;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none; 
-        }
-        #controls {
-            margin-bottom: 15px; 
-            text-align: center;
-            width: 100%;
             display: flex;
             justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: monospace, sans-serif;
+            flex-direction: column;
         }
-        input[type="text"] {
+        #game-container {
+            display: flex;
+            gap: 20px;
+            width: 850px;
+        }
+        canvas {
+            background-color: var(--bg-color);
+            border: 2px solid var(--border-color);
+            display: none; /* Hide icon canvases initially */
+        }
+        #gameCanvas {
+            display: block; /* Show main game canvas */
+        }
+        #sidebar {
+            width: 200px;
+            padding: 15px;
+            background-color: #111;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .tabs {
+            list-style-type: none;
+            margin: 0 0 10px 0;
+            padding: 0;
+            display: flex;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .tab-button {
+            padding: 10px 15px;
+            cursor: pointer;
+            background-color: #333;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            color: var(--text-color);
+            font-family: monospace, sans-serif;
+        }
+        .tab-button.active {
+            background-color: var(--bg-color);
+            color: white;
+        }
+        .tab-content {
+            display: none;
             padding: 10px;
-            font-size: 16px;
-            border: 2px solid #ccc;
-            border-radius: 5px;
-            flex-grow: 1; 
-            max-width: 200px;
+            border: 1px solid var(--border-color);
+            width: 600px;
+            box-sizing: border-box;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .shop-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #333;
         }
         button {
-            padding: 10px 15px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            margin-left: 5px;
-        }
-        #game-area {
+            padding: 10px;
             width: 100%;
-            flex-grow: 1; 
-            background-color: #fff;
-            border: 2px solid #333;
-            position: relative;
-            overflow: hidden;
-            cursor: crosshair;
-            box-sizing: border-box; 
-            touch-action: none;
+            margin-top: 10px;
+            cursor: pointer;
+            background-color: #333;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            font-weight: bold;
+            font-family: monospace, sans-serif;
+            margin-bottom: 5px;
         }
-        .ball {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
+        button:disabled {
+            background-color: #000;
+            color: #555;
+            cursor: not-allowed;
+            border-color: #555;
+        }
+        .stats p {
+            margin: 5px 0;
             display: flex;
             align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-            transform: translate(0px, -60px); 
-            cursor: pointer; 
-            transition: transform 0.01s linear; 
-            touch-action: none; 
+        }
+        .icon {
+            margin-right: 8px;
+        }
+        #fieldList button {
+            width: auto;
+            padding: 5px 10px;
+        }
+        .color-option {
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
 
-    <div id="controls">
-        <input type="text" id="nameInput" placeholder="Enter name">
-        <!-- We use an ID for the button now to attach event listener in JS -->
-        <button id="dropButton">Drop</button>
-    </div>
+    <ul class="tabs">
+        <li class="tab-button active" onclick="openTab(event, 'MiningArea')">Mining Area</li>
+        <li class="tab-button" onclick="openTab(event, 'ShopArea')">Market</li>
+        <li class="tab-button" onclick="openTab(event, 'GeographyArea')">Geography</li>
+        <li class="tab-button" onclick="openTab(event, 'SettingsArea')">Settings</li>
+    </ul>
 
-    <div id="game-area">
-        <!-- Balls will be injected here by JavaScript -->
+    <div id="game-container">
+        <div id="sidebar">
+            <h2>Cryptographic</h2>
+            <div class="stats">
+                <p><canvas id="icon-tokedillion" class="icon" width="16" height="16"></canvas> Tokedillions: <span id="goldCount">0</span></p>
+                <p><canvas id="icon-merchant" class="icon" width="16" height="16"></canvas> Merchants: <span id="merchantCount">0</span>/100</p>
+                <p><canvas id="icon-accountant" class="icon" width="16" height="16"></canvas> Accountants: <span id="accountantCount">0</span>/5</p>
+                <p><canvas id="icon-ore" class="icon" width="16" height="16"></canvas> Ores: <span id="oreCount">0</span>/50</p>
+                <p>Exchanges: <span id="exchangeCount">1</span>/8</p>
+            </div>
+        </div>
+
+        <div id="MiningArea" class="tab-content active">
+            <canvas id="gameCanvas" width="600" height="400"></canvas>
+        </div>
+
+        <div id="ShopArea" class="tab-content">
+            <h3>Hire/Upgrades</h3>
+            <div class="shop-item">
+                <p>Hire a Merchant to mine for 10 Tokedillions. (Max 100)</p>
+                <button id="spawnMerchantButton" onclick="spawnMerchant()">Hire Merchant (10 Tokedillions)</button>
+            </div>
+            <div class="shop-item">
+                <p>Hire an Accountant. Each doubles your ore income. (Max 5)</p>
+                <button id="spawnAccountantButton" onclick="spawnAccountant()">Hire Accountant (300 Tokedillions)</button>
+            </div>
+             <div class="shop-item">
+                <p>Mascot Booth (MrDillions): Provides a 3x multiplier to all earnings. (Max 1)</p>
+                <button id="spawnMrDillionsButton" onclick="spawnMrDillionsBooth()">Build MrDillions Booth (100,000 Tokedillions)</button>
+            </div>
+            <div class="shop-item">
+                <p>Build an additional Exchange Booth. (Max 8)</p>
+                <button id="spawnExchangeButton" onclick="spawnExchange()">Build Exchange (1000 Tokedillions)</button>
+            </div>
+            <div class="shop-item">
+                <p>Upgrade Merchant Pickaxes: Level <span id="pickaxeLevel">1</span></p>
+                <p>Cost: <span id="pickaxeUpgradeCost">?</span> Tokedillions. Effect: +1 Mine Speed.</p>
+                <button id="upgradePickaxeButton" onclick="upgradePickaxe()">Upgrade Pickaxe</button>
+            </div>
+            <div class="shop-item">
+                <p>Deploy an Excavator. Instantly mines ores.</p>
+                <button id="spawnExcavatorButton" onclick="spawnExcavator()">Deploy Excavator (20000 Tokedillions)</button>
+            </div>
+        </div>
+
+        <div id="GeographyArea" class="tab-content">
+            <h3>Mining Fields</h3>
+            <p>Switch between different fields or discover new ones.</p>
+            <div id="fieldList">
+                <!-- Field buttons generated by JS -->
+            </div>
+            <button id="buyFieldButton" onclick="buyNewField()">Discover New Field (500,000 Tokedillions)</button>
+        </div>
+
+        <div id="SettingsArea" class="tab-content">
+            <h3>Settings</h3>
+            <div class="color-option">
+                <p>Change UI Color:</p>
+                <button onclick="changeColor('yellow')">Yellow</button>
+                <button onclick="changeColor('blue')">Blue</button>
+                <button onclick="changeColor('red')">Red</button>
+                <button onclick="changeColor('purple')">Purple</button>
+                <button onclick="changeColor('green')">Green</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // All code is now inside this load event listener
-        window.onload = function() {
-            const nameInput = document.getElementById('nameInput');
-            const gameArea = document.getElementById('game-area');
-            const dropButton = document.getElementById('dropButton'); // Get the button by ID
-
-            const BALL_SIZE = 60;
-            const GRAVITY = 0.5;
-            const DAMPING = 0.7; 
-            const FRICTION = 0.95;
-            const THROW_FORCE_MULTIPLIER = 0.5;
-            let balls = []; 
-            let draggedBall = null;
-            let interactionPos = { x: 0, y: 0 };
-            let lastInteractionPos = { x: 0, y: 0 };
-
-            // Attach the click handler to the button using JavaScript
-            dropButton.addEventListener('click', addBallFromInput);
-
-
-            function getRandomColor() {
-                const letters = '0123456789ABCDEF';
-                let color = '#';
-                for (let i = 0; i < 6; i++) {
-                    color += letters[Math.floor(Math.random() * 16)];
+        // --- Global Game State Management ---
+        let gameState = {
+            tokedillions: 50,
+            currentFieldId: 'field_0',
+            fields: {
+                'field_0': {
+                    units: [],
+                    ores: [],
+                    bases: [],
+                    accountants: [],
+                    pickaxeLevel: 1,
                 }
-                return color;
             }
+        };
+        const NEW_FIELD_COST = 500000;
 
-            function createBall(name) {
-                const ballElement = document.createElement('div');
-                ballElement.classList.add('ball');
-                ballElement.textContent = name;
-                ballElement.style.backgroundColor = getRandomColor();
-                
-                ballElement.addEventListener('mousedown', onBallInteractionStart);
-                ballElement.addEventListener('touchstart', onBallInteractionStart);
+        // Note: These variables will be used to actively run the current field's simulation.
+        let units = gameState.fields[gameState.currentFieldId].units;
+        let ores = gameState.fields[gameState.currentFieldId].ores;
+        let bases = gameState.fields[gameState.currentFieldId].bases;
+        let accountants = gameState.fields[gameState.currentFieldId].accountants;
+        let pickaxeLevel = gameState.fields[gameState.currentFieldId].pickaxeLevel;
 
-                const maxLeft = gameArea.clientWidth - BALL_SIZE;
-                const startX = Math.floor(Math.random() * maxLeft);
+        const merchantCost = 10;
+        const accountantCost = 300;
+        const exchangeCost = 1000;
+        const excavatorCost = 20000;
+        
+        const FILL_COLOR = '#000000';
+        let STROKE_COLOR = '#FFFF00'; // Made dynamic
+        const MAX_ORES = 50; 
+        const MAX_MERCHANTS_PER_ORE = 3;
+        const MAX_ACCOUNTANTS = 5;
+        const MAX_BASES = 8;
+        const MAX_MERCHANTS = 100;
+        const BASE_ORE_VALUE = 15;
+        let pickaxeUpgradeBaseCost = 50;
 
-                const ballPhysics = {
-                    element: ballElement,
-                    x: startX,
-                    y: -BALL_SIZE,
-                    vx: (Math.random() - 0.5) * 5,
-                    vy: 0,
-                    isDragging: false
+
+        function saveCurrentField() {
+            const currentField = gameState.fields[gameState.currentFieldId];
+            currentField.units = units; 
+            currentField.ores = ores;
+            currentField.bases = bases;
+            currentField.accountants = accountants;
+            currentField.pickaxeLevel = pickaxeLevel;
+        }
+
+        function loadField(fieldId) {
+            saveCurrentField();
+            gameState.currentFieldId = fieldId;
+            const newField = gameState.fields[fieldId];
+            
+            units = newField.units;
+            ores = newField.ores;
+            bases = newField.bases;
+            accountants = newField.accountants;
+            pickaxeLevel = newField.pickaxeLevel;
+            
+            if (typeof draw === 'function') draw(); 
+            updateFieldListUI();
+        }
+
+        function buyNewField() {
+            if (gameState.tokedillions >= NEW_FIELD_COST) {
+                gameState.tokedillions -= NEW_FIELD_COST;
+                const newFieldId = `field_${Object.keys(gameState.fields).length}`;
+                gameState.fields[newFieldId] = {
+                    units: [],
+                    ores: [],
+                    bases: [],
+                    accountants: [],
+                    pickaxeLevel: 1,
                 };
-
-                gameArea.appendChild(ballElement);
-                balls.push(ballPhysics);
+                loadField(newFieldId);
+                bases.push(new HomeBase(canvas.width / 2, canvas.height / 2)); 
+                initializeOresForCurrentField(); 
             }
-
-            function addBallFromInput() {
-                const name = nameInput.value.trim();
-                if (name === '') {
-                    nameInput.focus(); 
-                    return;
+        }
+        
+        function updateFieldListUI() {
+            const listDiv = document.getElementById('fieldList');
+            listDiv.innerHTML = '';
+            Object.keys(gameState.fields).forEach(fieldId => {
+                const button = document.createElement('button');
+                button.textContent = `Field ${fieldId.split('_') * 1 + 1} ${fieldId === gameState.currentFieldId ? '(Active)' : ''}`;
+                button.onclick = () => loadField(fieldId);
+                if (fieldId === gameState.currentFieldId) {
+                    button.disabled = true;
                 }
-                createBall(name);
-                nameInput.value = '';
-                nameInput.focus();
+                listDiv.appendChild(button);
+            });
+            document.getElementById('buyFieldButton').disabled = gameState.tokedillions < NEW_FIELD_COST;
+        }
+
+        // --- Tab System Logic ---
+        function openTab(evt, tabName) {
+            saveCurrentField();
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
             }
-
-            // --- Interaction Handlers (Unified for Mouse and Touch) ---
-
-            function getCoordsInGameArea(e) {
-                const clientX = e.touches ? e.touches.clientX : e.clientX;
-                const clientY = e.touches ? e.touches.clientY : e.clientY;
-                
-                const rect = gameArea.getBoundingClientRect();
-                return {
-                    x: clientX - rect.left,
-                    y: clientY - rect.top
-                };
+            tablinks = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
             }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.classList.add("active");
 
-            function onBallInteractionStart(e) {
-                draggedBall = balls.find(b => b.element === e.target);
-                if (draggedBall) {
-                    draggedBall.isDragging = true;
-                    draggedBall.vy = 0; 
-                    draggedBall.vx = 0;
-                    lastInteractionPos = getCoordsInGameArea(e);
+            if (tabName === 'MiningArea') {
+                document.getElementById('gameCanvas').style.display = 'block';
+            } else {
+                document.getElementById('gameCanvas').style.display = 'none';
+            }
+            if (tabName === 'GeographyArea') {
+                updateFieldListUI();
+            }
+        }
 
-                    document.addEventListener('mousemove', onInteractionMove);
-                    document.addEventListener('mouseup', onInteractionEnd);
-                    document.addEventListener('touchmove', onInteractionMove, { passive: false });
-                    document.addEventListener('touchend', onInteractionEnd);
-                    
-                    e.preventDefault(); 
+        // --- Game Variables and Setup (now points to global state) ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const goldCountElement = document.getElementById('goldCount');
+        const merchantCountElement = document.getElementById('merchantCount');
+        const accountantCountElement = document.getElementById('accountantCount');
+        const oreCountElement = document.getElementById('oreCount');
+        const exchangeCountElement = document.getElementById('exchangeCount');
+        const pickaxeLevelElement = document.getElementById('pickaxeLevel');
+        const pickaxeUpgradeCostElement = document.getElementById('pickaxeUpgradeCost');
+        const spawnMerchantButton = document.getElementById('spawnMerchantButton');
+        const spawnAccountantButton = document.getElementById('spawnAccountantButton');
+        const upgradePickaxeButton = document.getElementById('upgradePickaxeButton');
+        const spawnExchangeButton = document.getElementById('spawnExchangeButton');
+        const spawnExcavatorButton = document.getElementById('spawnExcavatorButton');
+
+
+        function distanceBetween(obj1, obj2) {
+            const dx = obj1.x - obj2.x;
+            const dy = obj2.y - obj1.y;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        // --- Game Object Classes ---
+        class HomeBase { constructor(x, y) { this.x = x; this.y = y; this.width = 25; this.height = 40; }
+            draw() {
+                ctx.fillStyle = FILL_COLOR; ctx.strokeStyle = STROKE_COLOR; ctx.lineWidth = 1;
+                ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+                ctx.strokeRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+                ctx.beginPath();
+                ctx.moveTo(this.x - this.width / 2, this.y - this.height / 2);
+                ctx.lineTo(this.x, this.y - this.height / 2 - 10);
+                ctx.lineTo(this.x + this.width / 2, this.y - this.height / 2);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+                ctx.fillStyle = STROKE_COLOR; ctx.textAlign = 'center'; ctx.font = '6px monospace'; 
+                ctx.fillText("Exch", this.x, this.y + 3); ctx.font = '10px monospace';
+            }
+        }
+        class Ore { constructor(x, y) { this.x = x; this.y = y; this.radius = 5; this.health = 20; }
+            draw() {
+                ctx.beginPath();
+                ctx.moveTo(this.x + Math.cos(0) * this.radius, this.y + Math.sin(0) * this.radius);
+                for (let i = 1; i <= 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2; const variedRadius = this.radius * (0.8 + Math.random() * 0.4);
+                    ctx.lineTo(this.x + Math.cos(angle) * variedRadius, this.y + Math.sin(angle) * variedRadius);
                 }
+                ctx.closePath();
+                ctx.fillStyle = FILL_COLOR; ctx.strokeStyle = STROKE_COLOR; ctx.fill(); ctx.stroke();
+                ctx.fillStyle = STROKE_COLOR; ctx.textAlign = 'center'; ctx.font = '6px monospace';
+                ctx.fillText(this.health, this.x, this.y + 2 + this.radius); ctx.font = '10px monospace';
             }
+        }
 
-            function onInteractionMove(e) {
-                if (draggedBall) {
-                    interactionPos = getCoordsInGameArea(e);
-                    
-                    const dx = interactionPos.x - lastInteractionPos.x;
-                    const dy = interactionPos.y - lastInteractionPos.y;
-
-                    draggedBall.x += dx;
-                    draggedBall.y += dy;
-
-                    draggedBall.x = Math.max(0, Math.min(gameArea.clientWidth - BALL_SIZE, draggedBall.x));
-                    draggedBall.y = Math.max(0, Math.min(gameArea.clientHeight - BALL_SIZE, draggedBall.y));
-                    
-                    draggedBall.vx = dx * THROW_FORCE_MULTIPLIER;
-                    draggedBall.vy = dy * THROW_FORCE_MULTIPLIER;
-                    
-                    lastInteractionPos = interactionPos;
-                    
-                    e.preventDefault();
-                }
+        class Merchant {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.radius = 3;
+                this.speed = 0.5;
+                this.target = null; this.carrying = false; this.mineSpeed = pickaxeLevel; this.mineCooldown = 0; this.returnTarget = null; this.type = 'merchant';
             }
-
-            function onInteractionEnd(e) {
-                if (draggedBall) {
-                    draggedBall.isDragging = false;
-
-                    draggedBall = null;
-                    document.removeEventListener('mousemove', onInteractionMove);
-                    document.removeEventListener('mouseup', onInteractionEnd);
-                    document.removeEventListener('touchmove', onInteractionMove);
-                    document.removeEventListener('touchend', onInteractionEnd);
-                }
+            draw() {
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fillStyle = FILL_COLOR; ctx.strokeStyle = STROKE_COLOR; ctx.fill(); ctx.stroke(); ctx.closePath();
+                ctx.strokeRect(this.x - 2, this.y - 4, 4, 3); 
+                ctx.beginPath(); ctx.moveTo(this.x + 2, this.y + 2); ctx.lineTo(this.x + 5, this.y - 1);
+                ctx.strokeStyle = STROKE_COLOR; ctx.lineWidth = 1; ctx.stroke();
             }
-
-
-            // --- Physics Update Loop (FIXED CALCULATION) ---
-            function updatePhysics() {
-                const gameAreaHeight = gameArea.clientHeight;
-                const gameAreaWidth = gameArea.clientWidth;
-
-                for (const ball of balls) {
-
-                    if (!ball.isDragging) {
-                        ball.vy += GRAVITY;
-                        ball.y += ball.vy; 
-                        ball.x += ball.vx;
-
-                        // Wall collision (left/right bounds)
-                        if (ball.x + BALL_SIZE > gameAreaWidth) {
-                            ball.x = gameAreaWidth - BALL_SIZE;
-                            ball.vx *= -DAMPING;
-                        } else if (ball.x < 0) {
-                            ball.x = 0;
-                            ball.vx *= -DAMPING;
-                        }
-
-                        // Floor collision (bottom bounds)
-                        if (ball.y + BALL_SIZE > gameAreaHeight) {
-                            ball.y = gameAreaHeight - BALL_SIZE;
-                            ball.vy *= -DAMPING; 
+            update() {
+                this.mineSpeed = pickaxeLevel;
+                if (!this.carrying) {
+                    this.returnTarget = null; 
+                    if (!this.target || this.target.health <= 0) { this.findNearestOre(); }
+                    if (this.target) {
+                        if (distanceBetween(this, this.target) < this.target.radius + this.radius + 2) {
+                            if (this.mineCooldown <= 0) { this.target.health -= this.mineSpeed; this.mineCooldown = 1000; if (this.target.health <= 0) { this.carrying = true; this.target = null; } }
+                        } else { this.moveToTarget(this.target, true); }
+                    }
+                } else {
+                    if (!this.returnTarget) { this.findNearestBase(); }
+                    if (this.returnTarget) { this.moveToTarget(this.returnTarget, false);
+                        if (distanceBetween(this, this.returnTarget) < 10) {
+                            // Calculates earnings using all multipliers upon delivery
+                            const accountantMultiplier = Math.pow(2, accountants.length);
+                            const dillionsMultiplier = bases.filter(b => b instanceof MrDillionsBooth).length > 0 ? 3 : 1;
+                            const totalMultiplier = accountantMultiplier * dillionsMultiplier;
+                            const earnings = BASE_ORE_VALUE * totalMultiplier; 
                             
-                            if (Math.abs(ball.vy) < 1 && Math.abs(ball.vx) < 0.1) {
-                                ball.vy = 0;
-                                ball.vx = 0;
-                            } else if (ball.vy === 0) {
-                                ball.vx *= FRICTION;
+                            gameState.tokedillions += earnings;
+                            this.carrying = false; this.returnTarget = null;
+                        }
+                    }
+                }
+                if (this.mineCooldown > 0) { this.mineCooldown -= 16; }
+            }
+            findNearestOre() {
+               let closestOre = null; let minDistance = Infinity;
+                const activeMerchants = units.filter(u => u.type === 'merchant' && !u.carrying); 
+                for (const ore of ores) {
+                    const minersOnOre = activeMerchants.filter(m => m.target === ore).length;
+                    if (ore.health > 0 && minersOnOre < MAX_MERCHANTS_PER_ORE) {
+                        const distance = distanceBetween(this, ore); if (distance < minDistance) { minDistance = distance; closestOre = ore; }
+                    }
+                }
+                this.target = closestOre;
+            }
+            findNearestBase() {
+                let closestBase = null; let minDistance = Infinity;
+                for (const base of bases) { const distance = distanceBetween(this, base); if (distance < minDistance) { minDistance = distance; closestBase = base; } }
+                this.returnTarget = closestBase;
+            }
+            moveToTarget(target, avoidObstacles = false) {
+                let dx = target.x - this.x; let dy = target.y - this.y; let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance > 0) {
+                    dx /= distance; dy /= distance;
+                    if (avoidObstacles) {
+                        for (const obstacle of ores) {
+                            if (obstacle === target || obstacle === this) continue;
+                            if (distanceBetween(this, obstacle) < obstacle.radius + this.radius + 2) {
+                                const odx = this.x - obstacle.x; const ody = this.y - obstacle.y;
+                                dx += odx / distanceBetween(this, obstacle); dy += ody / distanceBetween(this, obstacle);
+                                const avoidanceLength = Math.sqrt(dx * dx + dy * dy); dx /= avoidanceLength; dy /= avoidanceLength;
                             }
                         }
                     }
-
-                    // Update the DOM element position
-                    ball.element.style.transform = `translate(${ball.x}px, ${ball.y}px)`;
+                    this.x += dx * this.speed; this.y += dy * this.speed;
                 }
-
-                requestAnimationFrame(updatePhysics);
             }
+        }
 
-            // Start the physics loop
-            updatePhysics();
-        }; // End of window.onload function
+        class Accountant { constructor(x, y) { this.x = x; this.y = y; }
+            draw() {
+                ctx.fillStyle = FILL_COLOR; ctx.strokeStyle = STROKE_COLOR; ctx.lineWidth = 1;
+                ctx.strokeRect(this.x - 6, this.y, 12, 6); 
+                ctx.beginPath(); ctx.arc(this.x, this.y - 3, 3, 0, Math.PI * 2); ctx.stroke();
+                ctx.beginPath(); ctx.arc(this.x, this.y - 8, 1.5, 0, Math.PI * 2); ctx.stroke();
+                ctx.fillStyle = STROKE_COLOR; ctx.textAlign = 'center'; ctx.font = '6px monospace';
+                ctx.fillText("ACC", this.x, this.y + 14); ctx.font = '10px monospace';
+            }
+            update() {}
+        }
+        
+        class Excavator {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.width = 15; this.height = 10;
+                this.speed = 0.4;
+                this.target = null; this.type = 'excavator';
+            }
+            draw() {
+                ctx.fillStyle = FILL_COLOR; ctx.strokeStyle = STROKE_COLOR; ctx.lineWidth = 1;
+                ctx.strokeRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+                ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.width / 2, this.y - this.height / 2);
+                ctx.lineTo(this.x + this.width / 2 + 5, this.y); 
+                ctx.lineTo(this.x + this.width / 2, this.y + this.height / 2);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+            }
+            update() {
+                if (!this.target || this.target.health <= 0) { this.findNearestOre(); }
+                if (this.target) {
+                    if (distanceBetween(this, this.target) < this.width / 2 + this.target.radius + 5) {
+                        this.target.health = 0; 
+                        // Calculates earnings using all multipliers instantly
+                        const accountantMultiplier = Math.pow(2, accountants.length);
+                        const dillionsMultiplier = bases.filter(b => b instanceof MrDillionsBooth).length > 0 ? 3 : 1;
+                        const totalMultiplier = accountantMultiplier * dillionsMultiplier;
+                        const earnings = BASE_ORE_VALUE * totalMultiplier; 
+
+                        gameState.tokedillions += earnings;
+                        this.target = null;
+                    } else { this.moveToTarget(this.target); }
+                }
+            }
+            findNearestOre() {
+                let closestOre = null; let minDistance = Infinity;
+                for (const ore of ores) { if (ore.health > 0) { const distance = distanceBetween(this, ore); if (distance < minDistance) { minDistance = distance; closestOre = ore; } } }
+                this.target = closestOre;
+            }
+            moveToTarget(target) {
+                let dx = target.x - this.x; let dy = target.y - this.y; let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance > 0) { dx /= distance; dy /= distance; this.x += dx * this.speed; this.y += dy * this.speed; }
+            }
+        }
+        class MrDillionsBooth {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.width = 15; this.height = 15;
+            }
+            draw() {
+                ctx.fillStyle = FILL_COLOR; ctx.strokeStyle = STROKE_COLOR; ctx.lineWidth = 1;
+                ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+                ctx.strokeRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y - 7, 5, 0, Math.PI * 2); 
+                ctx.fillStyle = '#00FF00'; // MrDillions color
+                ctx.fill(); ctx.stroke();
+                ctx.fillStyle = STROKE_COLOR; ctx.textAlign = 'center'; ctx.font = '6px monospace'; 
+                ctx.fillText("MRD", this.x, this.y + 4); 
+            }
+            update() {} // No update logic needed as it provides a passive multiplier
+        }
+
+
+        // --- Game Setup and Loop ---
+        
+        function initializeGameWorld() {
+            if (bases.length === 0) {
+                 bases.push(new HomeBase(canvas.width / 2, canvas.height / 2));
+            }
+            initializeOresForCurrentField();
+        }
+        
+        function initializeOresForCurrentField() {
+             while (ores.length < MAX_ORES) { spawnNewOre(); }
+        }
+
+
+        function spawnNewOre() {
+            let x, y, validPlacement = false; const minDistance = 40; 
+            while (ores.length < MAX_ORES && !validPlacement) {
+                x = Math.random() * canvas.width; y = Math.random() * canvas.height; validPlacement = true;
+                for(const base of bases) { if (distanceBetween({x,y}, base) < minDistance) { validPlacement = false; break; } }
+                for(const unit of units) { if (distanceBetween({x,y}, unit) < minDistance) { validPlacement = false; break; } }
+            }
+            if(validPlacement) { ores.push(new Ore(x, y)); }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            bases.forEach(base => base.draw());
+            ores.forEach(ore => ore.draw());
+            units.forEach(unit => unit.draw());
+            accountants.forEach(accountant => accountant.draw());
+        }
+
+        function update() {
+            units.forEach(unit => unit.update());
+            accountants.forEach(accountant => accountant.update());
+
+            const minedOresCount = ores.filter(ore => ore.health <= 0).length;
+            ores = ores.filter(ore => ore.health > 0);
+
+            for (let i = 0; i < minedOresCount; i++) { if(ores.length < MAX_ORES) { spawnNewOre(); } }
+            
+            units.forEach(unit => { if (unit.target && unit.target.health <= 0) { unit.target = null; } });
+
+            // Update UI elements
+            goldCountElement.textContent = gameState.tokedillions.toFixed(0);
+            merchantCountElement.textContent = units.filter(u => u.type === 'merchant').length;
+            accountantCountElement.textContent = accountants.length;
+            oreCountElement.textContent = ores.length;
+            exchangeCountElement.textContent = bases.length;
+            pickaxeLevelElement.textContent = pickaxeLevel;
+            const currentUpgradeCost = pickaxeUpgradeBaseCost * Math.pow(2, pickaxeLevel - 1);
+            pickaxeUpgradeCostElement.textContent = currentUpgradeCost;
+
+            // Update button disabled states
+            spawnMerchantButton.disabled = gameState.tokedillions < merchantCost || units.filter(u => u.type === 'merchant').length >= MAX_MERCHANTS;
+            spawnAccountantButton.disabled = gameState.tokedillions < accountantCost || accountants.length >= MAX_ACCOUNTANTS;
+            upgradePickaxeButton.disabled = gameState.tokedillions < currentUpgradeCost;
+            spawnExchangeButton.disabled = gameState.tokedillions < exchangeCost || bases.length >= MAX_BASES;
+            spawnExcavatorButton.disabled = gameState.tokedillions < excavatorCost;
+            document.getElementById('spawnMrDillionsButton').disabled = gameState.tokedillions < 100000 || bases.filter(b => b instanceof MrDillionsBooth).length > 0;
+            
+            drawSidebarIcons();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- User Interaction Functions ---
+        function spawnMerchant() {
+            if (gameState.tokedillions >= merchantCost && units.filter(u => u.type === 'merchant').length < MAX_MERCHANTS) {
+                gameState.tokedillions -= merchantCost;
+                units.push(new Merchant(canvas.width / 2, canvas.height / 2));
+            }
+        }
+
+        function spawnAccountant() {
+            if (gameState.tokedillions >= accountantCost && accountants.length < MAX_ACCOUNTANTS) {
+                gameState.tokedillions -= accountantCost;
+                const angle = (accountants.length / MAX_ACCOUNTANTS) * Math.PI * 2;
+                const radiusOffset = 25; 
+                const xPos = canvas.width / 2 + Math.cos(angle) * radiusOffset;
+                const yPos = canvas.height / 2 + Math.sin(angle) * radiusOffset;
+                accountants.push(new Accountant(xPos, yPos));
+            }
+        }
+        
+        function spawnExcavator() {
+             if (gameState.tokedillions >= excavatorCost) {
+                gameState.tokedillions -= excavatorCost;
+                units.push(new Excavator(canvas.width / 2, canvas.height / 2));
+            }
+        }
+
+        function upgradePickaxe() {
+            const currentUpgradeCost = pickaxeUpgradeBaseCost * Math.pow(2, pickaxeLevel - 1);
+            if (gameState.tokedillions >= currentUpgradeCost) {
+                gameState.tokedillions -= currentUpgradeCost;
+                pickaxeLevel += 1;
+            }
+        }
+
+        function spawnExchange() {
+            if (gameState.tokedillions >= exchangeCost && bases.length < MAX_BASES) {
+                gameState.tokedillions -= exchangeCost;
+                let x, y, validPlacement = false; const minDistance = 50;
+                while(!validPlacement) {
+                    x = Math.random() * canvas.width; y = Math.random() * canvas.height; validPlacement = true;
+                    for(const base of bases) { if (distanceBetween({x,y}, base) < minDistance) { validPlacement = false; break; } }
+                    for(const ore of ores) { if (distanceBetween({x,y}, ore) < minDistance) { validPlacement = false; break; } }
+                }
+                bases.push(new HomeBase(x, y));
+            }
+        }
+
+        function spawnMrDillionsBooth() {
+            const cost = 100000;
+            if (gameState.tokedillions >= cost && bases.filter(b => b instanceof MrDillionsBooth).length === 0) {
+                gameState.tokedillions -= cost;
+                let x, y, validPlacement = false; const minDistance = 50;
+                while(!validPlacement) {
+                    x = Math.random() * canvas.width; y = Math.random() * canvas.height; validPlacement = true;
+                    for(const base of bases) { if (distanceBetween({x,y}, base) < minDistance) { validPlacement = false; break; } }
+                    for(const ore of ores) { if (distanceBetween({x,y}, ore) < minDistance) { validPlacement = false; break; } }
+                }
+                bases.push(new MrDillionsBooth(x, y));
+            }
+        }
+
+
+        // --- Helper for drawing sidebar icons ---
+        function drawSidebarIcons() {
+            const ctxT = document.getElementById('icon-tokedillion').getContext('2d'); ctxT.clearRect(0, 0, 16, 16); ctxT.beginPath(); ctxT.arc(8, 8, 7, 0, Math.PI * 2); ctxT.fillStyle = FILL_COLOR; ctxT.strokeStyle = STROKE_COLOR; ctxT.fill(); ctxT.stroke();
+            const ctxM = document.getElementById('icon-merchant').getContext('2d'); ctxM.clearRect(0, 0, 16, 16); ctxM.beginPath(); ctxM.arc(8, 8, 6, 0, Math.PI * 2); ctxM.fillStyle = FILL_COLOR; ctxM.strokeStyle = STROKE_COLOR; ctxM.fill(); ctxM.stroke();
+            const ctxA = document.getElementById('icon-accountant').getContext('2d'); ctxA.clearRect(0, 0, 16, 16); ctxA.strokeStyle = STROKE_COLOR; ctxA.strokeRect(3, 10, 10, 4); ctxA.beginPath(); ctxA.arc(8, 7, 4, 0, Math.PI * 2); ctxA.stroke();
+            const ctxO = document.getElementById('icon-ore').getContext('2d'); ctxO.clearRect(0, 0, 16, 16); ctxO.beginPath(); ctxO.moveTo(8, 1); ctxO.lineTo(15, 8); ctxO.lineTo(12, 15); ctxO.lineTo(4, 15); ctxO.lineTo(1, 8); ctxO.closePath(); ctxO.fillStyle = FILL_COLOR; ctxO.strokeStyle = STROKE_COLOR; ctxO.fill(); ctxO.stroke();
+        }
+
+        // --- Settings Functions ---
+        function changeColor(colorName) {
+            let colorHex;
+            switch(colorName) {
+                case 'yellow': colorHex = '#FFFF00'; break;
+                case 'blue': colorHex = '#00FFFF'; break;
+                case 'red': colorHex = '#FF0000'; break;
+                case 'purple': colorHex = '#FF00FF'; break;
+                case 'green': colorHex = '#00FF00'; break;
+            }
+            // Update CSS variables
+            document.documentElement.style.setProperty('--text-color', colorHex);
+            document.documentElement.style.setProperty('--border-color', colorHex);
+            STROKE_COLOR = colorHex; // Update JS variable for canvas drawing
+
+            // Force a redraw of all static elements (like icons and current game elements)
+            drawSidebarIcons();
+            draw();
+        }
+        
+        // Initialize and Start Game
+        initializeGameWorld();
+        gameLoop();
+        
+        // Ensure initial view is correct
+        document.getElementById('MiningArea').style.display = 'block';
+        document.getElementById('gameCanvas').style.display = 'block';
+        drawSidebarIcons();
     </script>
-
 </body>
 </html>
