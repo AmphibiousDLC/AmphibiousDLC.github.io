@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Salamander Game: Pond Avoidance</title>
+<title>Salamander Game: Secret Codes</title>
 <style>
   body {
     background-color: #f0f0f0;
@@ -30,6 +30,16 @@
     max-width: 800px;
     max-height: 500px;
   }
+  #codeArea {
+      margin-bottom: 10px;
+      text-align: center;
+  }
+  #codeInput {
+      padding: 5px;
+      font-size: 14px;
+      width: 150px; 
+  }
+
   .controls {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -64,8 +74,6 @@
     height: 40px;
     margin-top: 10px;
   }
-
-  /* --- Start Screen Styling --- */
   #startScreen {
     text-align: center;
     padding: 20px;
@@ -78,7 +86,6 @@
     margin-bottom: 30px;
   }
   #startButton {
-    /* Made the button size adjust to fit the text and animation effects */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -108,6 +115,10 @@
 </div>
 
 <div id="gameContainer">
+    <div id="codeArea">
+        Enter Code: <input type="text" id="codeInput" onkeydown="checkCode(event)" placeholder="Midas or Poseidon">
+    </div>
+
     <canvas id="gameCanvas" width="800" height="500"></canvas>
 
     <div class="controls">
@@ -126,57 +137,93 @@
   const ctx = canvas.getContext("2d");
   canvas.width = 800;
   canvas.height = 500;
-  const characterWidth = 100; const characterHeight = 25; const speed = 3; const cloneSpeed = 1;
-  const player = { x: 0, y: 0, angle: 0, color: "#444444", spotColor: "#FFD700", dx: 0, dy: 0, spinSpeed: 0 };
+  // Base dimensions (will be scaled for the player if necessary)
+  const BASE_CHAR_WIDTH = 100; 
+  const BASE_CHAR_HEIGHT = 25; 
+  const speed = 3;
+  const cloneSpeed = 1;
+
+  // Player dimension variables (dynamically updated by codes)
+  let characterWidth = BASE_CHAR_WIDTH;
+  let characterHeight = BASE_CHAR_HEIGHT;
+  
+  let playerBodyColor = "#444444";
+  let playerSpotColor = "#FFD700";
+  let playerLegColor = "#444444"; 
+  let playerHasHat = false; 
+  let playerHasSpidermanSuit = false; 
+
+  const player = { x: 0, y: 0, angle: 0, dx: 0, dy: 0, spinSpeed: 0 };
   const spawnedSalamanders = [];
   const keys = { up: false, down: false, left: false, right: false };
   let isDiscoMode = false; let discoIntervalId = null;
 
-  // Define pond properties globally so we can check against them
-  const pond = {
-      centerX: canvas.width * 0.2,
-      centerY: canvas.height * 0.8,
-      radiusX: canvas.width * 0.18,
-      radiusY: canvas.height * 0.15
-  };
 
-  // Helper function to check if a salamander's center point is inside the elliptical pond
-  function isInsidePond(salamanderX, salamanderY) {
-      // Ellipse equation check: ((x-h)^2 / a^2) + ((y-k)^2 / b^2) <= 1
-      const h = pond.centerX;
-      const k = pond.centerY;
-      const a = pond.radiusX;
-      const b = pond.radiusY;
-      const result = (Math.pow(salamanderX - h, 2) / Math.pow(a, 2)) + (Math.pow(salamanderY - k, 2) / Math.pow(b, 2));
-      return result <= 1;
+  function checkCode(event) {
+      if (event.key === 'Enter') {
+          const code = document.getElementById("codeInput").value.toLowerCase();
+          // Reset accessories and size
+          playerHasHat = false; 
+          playerHasSpidermanSuit = false;
+          characterWidth = BASE_CHAR_WIDTH;
+          characterHeight = BASE_CHAR_HEIGHT;
+
+          switch(code) {
+              case 'midas':
+                  playerBodyColor = "#FFD700"; playerSpotColor = null; playerLegColor = "#FFD700"; break;
+              case 'poseidon':
+                  playerBodyColor = "#00BFFF"; playerSpotColor = null; playerLegColor = "#00BFFF"; break;
+              case 'spiderman':
+                  playerBodyColor = "#D50000"; playerSpotColor = null; playerLegColor = "#0047AB"; playerHasSpidermanSuit = true; break;
+              case 'ethan':
+                  playerBodyColor = "#FF69B4"; playerSpotColor = null; playerLegColor = "#FF69B4"; break;
+              case 'mrpen':
+                  playerBodyColor = "#D3D3D3"; playerSpotColor = null; playerLegColor = "#444444"; playerHasHat = true; break;
+              case 'sans': // New Code Case: Sans (Blue body, white head)
+                  playerBodyColor = "#0000FF"; // Blue body/tail
+                  playerSpotColor = null;
+                  playerLegColor = "#0000FF";
+                  // We handle the white head in the draw function logic
+                  break;
+              case 'amphibiousdlc': // New Code Case: Huge, dark grey, two yellow stripes
+                  playerBodyColor = "#444444"; // Dark grey
+                  playerSpotColor = "#FFD700"; // Yellow stripes (using spots logic for stripes)
+                  playerLegColor = "#444444";
+                  characterWidth = 200; // Make huge
+                  characterHeight = 50;
+                  break;
+              default: break;
+          }
+          document.getElementById("codeInput").value = '';
+      }
   }
 
-  function drawEnvironment() {
-      // Draw Grass background (Duller Green Shade)
-      ctx.fillStyle = "#8FBC8F"; 
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Draw Pond
-      ctx.fillStyle = "#00BFFF"; 
-      ctx.beginPath();
-      ctx.ellipse(pond.centerX, pond.centerY, pond.radiusX, pond.radiusY, 0, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.strokeStyle = "#008CBA";
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      // Draw Lily Pad
-      const lilyPadX = pond.centerX + pond.radiusX * 0.5;
-      const lilyPadY = pond.centerY - pond.radiusY * 0.3;
-      ctx.fillStyle = "#32CD32"; 
-      ctx.beginPath();
-      ctx.arc(lilyPadX, lilyPadY, 15, 0.2 * Math.PI, 1.8 * Math.PI);
-      ctx.lineTo(lilyPadX + 15 * Math.cos(0.2 * Math.PI), lilyPadY + 15 * Math.sin(0.2 * Math.PI));
-      ctx.closePath();
-      ctx.fill();
+  function drawSuitAndHat(drawX, drawY, isPlayerHat = false) {
+    if (!isPlayerHat) return; 
+    ctx.fillStyle = "#222222"; 
+    ctx.beginPath();
+    ctx.ellipse(drawX + characterWidth * 0.85, drawY + characterHeight * 0.05, 18 * (characterWidth/BASE_CHAR_WIDTH), 5 * (characterHeight/BASE_CHAR_HEIGHT), 0, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillRect(drawX + characterWidth * 0.85 - 12 * (characterWidth/BASE_CHAR_WIDTH), drawY + characterHeight * 0.05 - 20 * (characterHeight/BASE_CHAR_HEIGHT), 24 * (characterWidth/BASE_CHAR_WIDTH), 20 * (characterHeight/BASE_CHAR_HEIGHT));
+    ctx.fillStyle = "#444444"; 
+    ctx.fillRect(drawX + characterWidth * 0.45, drawY, characterWidth * 0.25, characterHeight);
   }
   
+  function drawSpidermanSuit(drawX, drawY, isSpiderman = false) {
+      if (!isSpiderman) return;
+      ctx.fillStyle = "#FFFFFF"; 
+      ctx.beginPath();
+      ctx.ellipse(drawX + characterWidth * 0.55, drawY + characterHeight * 0.5, 6, 4, 0, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.fillRect(drawX + characterWidth * 0.55 - 8, drawY + characterHeight * 0.5 - 1, 16, 2); 
+  }
 
+
+  function drawEnvironment() {
+      ctx.fillStyle = "white"; 
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  
   function startGame() {
       document.getElementById("startScreen").style.display = "none";
       document.getElementById("gameContainer").style.display = "flex";
@@ -194,39 +241,62 @@
       else { button.textContent = "DISCO MODE"; button.style.backgroundColor = "purple"; clearInterval(discoIntervalId); document.body.style.backgroundColor = "#f0f0f0"; [player, ...spawnedSalamanders].forEach(s => s.spinSpeed = 0); }
   }
   function spawnNewSalamander() {
-    // Ensure spawned salamanders don't start in the pond
-    let newX, newY;
-    do {
-        newX = Math.random() * (canvas.width - characterWidth) + characterWidth / 2;
-        newY = Math.random() * (canvas.height - characterHeight) + characterHeight / 2;
-    } while (isInsidePond(newX, newY));
-
-    spawnedSalamanders.push({ x: newX, y: newY, angle: 0, color: getRandomColor(), spotColor: null, dx: (Math.random() - 0.5) * cloneSpeed * 2, dy: (Math.random() - 0.5) * cloneSpeed * 2, spinSpeed: 0 });
+    const randomX = Math.random() * (canvas.width - BASE_CHAR_WIDTH) + BASE_CHAR_WIDTH / 2; const randomY = Math.random() * (canvas.height - BASE_CHAR_HEIGHT) + BASE_CHAR_HEIGHT / 2;
+    // Clones always use base size
+    spawnedSalamanders.push({ x: randomX, y: randomY, angle: 0, color: getRandomColor(), spotColor: null, legColor: null, hasHat: false, hasSpiderman: false, width: BASE_CHAR_WIDTH, height: BASE_CHAR_HEIGHT, dx: (Math.random() - 0.5) * cloneSpeed * 2, dy: (Math.random() - 0.5) * cloneSpeed * 2, spinSpeed: 0 });
   }
   function changeCloneDirections() {
       if (!isDiscoMode) { for (const salamander of spawnedSalamanders) { salamander.dx = (Math.random() - 0.5) * cloneSpeed * 2; salamander.dy = (Math.random() - 0.5) * cloneSpeed * 2; } }
   }
   setInterval(changeCloneDirections, 3000);
 
-  function drawSpots(drawX, drawY, spotColor) {
+  function drawSpots(drawX, drawY, spotColor, currentWidth, currentHeight) {
       if (!spotColor) return; ctx.fillStyle = spotColor;
-      const spots = [{x: drawX + characterWidth * 0.15, y: drawY + characterHeight * 0.5}, {x: drawX + characterWidth * 0.35, y: drawY + characterHeight * 0.2}, {x: drawX + characterWidth * 0.35, y: drawY + characterHeight * 0.8}, {x: drawX + characterWidth * 0.5, y: drawY + characterHeight * 0.4}, {x: drawX + characterWidth * 0.6, y: drawY + characterHeight * 0.75}, {x: drawX + characterWidth * 0.8, y: drawY + characterHeight * 0.5},];
-      spots.forEach(spot => { ctx.beginPath(); ctx.arc(spot.x, spot.y, 3, 0, 2 * Math.PI); ctx.fill(); });
+      // Adjust spot positions based on current size ratio
+      const spots = [
+          {x: drawX + currentWidth * 0.15, y: drawY + currentHeight * 0.5}, {x: drawX + currentWidth * 0.35, y: drawY + currentHeight * 0.2}, 
+          {x: drawX + currentWidth * 0.35, y: drawY + currentHeight * 0.8}, {x: drawX + currentWidth * 0.5, y: drawY + currentHeight * 0.4}, 
+          {x: drawX + currentWidth * 0.6, y: drawY + currentHeight * 0.75}, {x: drawX + currentWidth * 0.8, y: drawY + currentHeight * 0.5},
+      ];
+      spots.forEach(spot => { ctx.beginPath(); ctx.arc(spot.x, spot.y, 3 * (currentWidth/BASE_CHAR_WIDTH), 0, 2 * Math.PI); ctx.fill(); });
   }
 
-  function drawSalamander(x, y, drawAngle, color, spotColor) {
-    const legColor = color; ctx.save(); ctx.translate(x, y); ctx.rotate(drawAngle); 
-    const drawX = -characterWidth / 2; const drawY = -characterHeight / 2;
+  function drawSalamander(x, y, drawAngle, color, spotColor, customLegColor, hasHat, hasSpiderman, currentWidth, currentHeight) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(drawAngle); 
+    const drawX = -currentWidth / 2; const drawY = -currentHeight / 2;
+    
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.moveTo(drawX, drawY + characterHeight * 0.5); ctx.lineTo(drawX + characterWidth * 0.4, drawY); ctx.lineTo(drawX + characterWidth * 0.95, drawY); ctx.lineTo(drawX + characterWidth, drawY + characterHeight * 0.5); ctx.lineTo(drawX + characterWidth * 0.95, drawY + characterHeight); ctx.lineTo(drawX + characterWidth * 0.4, drawY + characterHeight);
+    ctx.moveTo(drawX, drawY + currentHeight * 0.5); ctx.lineTo(drawX + currentWidth * 0.4, drawY); ctx.lineTo(drawX + currentWidth * 0.95, drawY); ctx.lineTo(drawX + currentWidth, drawY + currentHeight * 0.5); ctx.lineTo(drawX + currentWidth * 0.95, drawY + currentHeight); ctx.lineTo(drawX + currentWidth * 0.4, drawY + currentHeight);
     ctx.closePath(); ctx.fill();
-    ctx.fillStyle = legColor;
-    ctx.fillRect(drawX + characterWidth * 0.42, drawY + characterHeight - 5, 5, 8); ctx.fillRect(drawX + characterWidth * 0.42, drawY + 5 - 8, 5, 8); ctx.fillRect(drawX + characterWidth * 0.7, drawY + characterHeight - 5, 5, 8); ctx.fillRect(drawX + characterWidth * 0.7, drawY + 5 - 8, 5, 8); 
-    drawSpots(drawX, drawY, spotColor);
+
+    // Specific Sans code head override (White head section)
+    if (color === "#0000FF") {
+        ctx.fillStyle = "#FFFFFF"; // White
+        ctx.beginPath();
+        ctx.ellipse(
+            drawX + currentWidth * 0.85, drawY + currentHeight * 0.5, 
+            currentWidth * 0.12, currentHeight * 0.45,       
+            0, 0, 2 * Math.PI
+        );
+        ctx.fill();
+    }
+    
+    ctx.fillStyle = customLegColor || color;
+    ctx.fillRect(drawX + currentWidth * 0.42, drawY + currentHeight - 5 * (currentHeight/BASE_CHAR_HEIGHT), 5 * (currentWidth/BASE_CHAR_WIDTH), 8 * (currentHeight/BASE_CHAR_HEIGHT)); 
+    ctx.fillRect(drawX + currentWidth * 0.42, drawY + 5 * (currentHeight/BASE_CHAR_HEIGHT) - 8 * (currentHeight/BASE_CHAR_HEIGHT), 5 * (currentWidth/BASE_CHAR_WIDTH), 8 * (currentHeight/BASE_CHAR_HEIGHT)); 
+    ctx.fillRect(drawX + currentWidth * 0.7, drawY + currentHeight - 5 * (currentHeight/BASE_CHAR_HEIGHT), 5 * (currentWidth/BASE_CHAR_WIDTH), 8 * (currentHeight/BASE_CHAR_HEIGHT)); 
+    ctx.fillRect(drawX + currentWidth * 0.7, drawY + 5 * (currentHeight/BASE_CHAR_HEIGHT) - 8 * (currentHeight/BASE_CHAR_HEIGHT), 5 * (currentWidth/BASE_CHAR_WIDTH), 8 * (currentHeight/BASE_CHAR_HEIGHT)); 
+    
+    // Pass correct width/height to spot drawer
+    drawSpots(drawX, drawY, spotColor, currentWidth, currentHeight); 
+    drawSuitAndHat(drawX, drawY, hasHat); 
+    drawSpidermanSuit(drawX, drawY, hasSpiderman); 
+
     ctx.fillStyle = "black";
-    ctx.beginPath(); ctx.arc(drawX + characterWidth * 0.85, drawY + characterHeight * 0.25, 2.5, 0, 2 * Math.PI); ctx.fill();
-    ctx.beginPath(); ctx.arc(drawX + characterWidth * 0.85, drawY + characterHeight * 0.75, 2.5, 0, 2 * Math.PI); ctx.fill();
+    // Adjust eye size/position for scale
+    ctx.beginPath(); ctx.arc(drawX + currentWidth * 0.85, drawY + currentHeight * 0.25, 2.5 * (currentWidth/BASE_CHAR_WIDTH), 0, 2 * Math.PI); ctx.fill();
+    ctx.beginPath(); ctx.arc(drawX + currentWidth * 0.85, drawY + currentHeight * 0.75, 2.5 * (currentWidth/BASE_CHAR_WIDTH), 0, 2 * Math.PI); ctx.fill();
     ctx.restore();
   }
 
@@ -234,52 +304,29 @@
     drawEnvironment(); 
     
     // --- Update Player ---
-    let originalPlayerX = player.x;
-    let originalPlayerY = player.y;
-
     if (!isDiscoMode) { 
         player.dx = 0; player.dy = 0;
         if (keys.up) player.dy -= speed; if (keys.down) player.dy += speed; if (keys.left) player.dx -= speed; if (keys.right) player.dx += speed;
         if (player.dx !== 0 || player.dy !== 0) { player.angle = Math.atan2(player.dy, player.dx); }
     } else { player.angle += player.spinSpeed; }
     player.x += player.dx; player.y += player.dy;
-
-    // Check player collision with pond
-    if (isInsidePond(player.x, player.y)) {
-        // If they move into the pond, revert to the previous position
-        player.x = originalPlayerX;
-        player.y = originalPlayerY;
-    }
-
+    // Use dynamic characterWidth/Height for player
     player.x = Math.max(characterWidth / 2, Math.min(canvas.width - characterWidth / 2, player.x));
     player.y = Math.max(characterHeight / 2, Math.min(canvas.height - characterHeight / 2, player.y));
-    drawSalamander(player.x, player.y, player.angle, player.color, player.spotColor);
+    
+    drawSalamander(player.x, player.y, player.angle, playerBodyColor, playerSpotColor, playerLegColor, playerHasHat, playerHasSpidermanSuit, characterWidth, characterHeight);
 
     // --- Update and Draw Spawned Salamanders ---
     for (const salamander of spawnedSalamanders) {
         if (!isDiscoMode) {
-            let originalCloneX = salamander.x;
-            let originalCloneY = salamander.y;
-
-            salamander.x += salamander.dx; 
-            salamander.y += salamander.dy;
-
-            // Check clone collision with pond
-            if (isInsidePond(salamander.x, salamander.y)) {
-                // Bounce them off the pond edge by reversing direction
-                salamander.x = originalCloneX;
-                salamander.y = originalCloneY;
-                salamander.dx *= -1;
-                salamander.dy *= -1;
-            }
-
-            // Wall collision (already had this)
-            if (salamander.x <= characterWidth / 2 || salamander.x >= canvas.width - characterWidth / 2) { salamander.dx *= -1; }
-            if (salamander.y <= characterHeight / 2 || salamander.y >= canvas.height - characterHeight / 2) { salamander.dy *= -1; }
-
+            salamander.x += salamander.dx; salamander.y += salamander.dy;
+            // Use clone's specific dimensions for collision
+            if (salamander.x <= salamander.width / 2 || salamander.x >= canvas.width - salamander.width / 2) { salamander.dx *= -1; }
+            if (salamander.y <= salamander.height / 2 || salamander.y >= canvas.height - salamander.height / 2) { salamander.dy *= -1; }
             salamander.angle = Math.atan2(salamander.dy, salamander.dx);
         } else { salamander.angle += salamander.spinSpeed; }
-        drawSalamander(salamander.x, salamander.y, salamander.angle, salamander.color, salamander.spotColor);
+        // Pass clone properties
+        drawSalamander(salamander.x, salamander.y, salamander.angle, salamander.color, salamander.spotColor, salamander.legColor, salamander.hasHat, salamander.hasSpiderman, salamander.width, salamander.height);
     }
     requestAnimationFrame(gameLoop);
   }
