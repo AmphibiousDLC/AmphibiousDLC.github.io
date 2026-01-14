@@ -1,335 +1,147 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Salamander Game: Secret Codes</title>
-<style>
-  body {
-    background-color: #f0f0f0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    margin: 0;
-    transition: background-color 0.1s ease;
-  }
-  #gameContainer {
-    display: none; 
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-  }
-  canvas {
-    border: solid 2px #333;
-    background-color: white; 
-    margin-bottom: 10px;
-    width: 90vw; 
-    height: 60vh; 
-    max-width: 800px;
-    max-height: 500px;
-  }
-  #codeArea {
-      margin-bottom: 10px;
-      text-align: center;
-  }
-  #codeInput {
-      padding: 5px;
-      font-size: 14px;
-      width: 150px; 
-  }
-
-  .controls {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-areas: ". up ." "left down right" ". spawn .";
-    gap: 10px;
-    justify-items: center;
-    width: 200px; 
-  }
-  button {
-    width: 60px;
-    height: 60px;
-    font-size: 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    color: white;
-  }
-  #up, #down, #left, #right { background-color: #4CAF50; }
-  #left, #right { font-size: 24px; } 
-
-  #spawn { 
-    grid-area: spawn; 
-    width: 100%; 
-    height: 40px;
-    font-size: 14px;
-    background-color: #00BFA5; 
-    margin-top: 10px;
-  }
-  #discoButton {
-    background-color: purple;
-    width: 200px;
-    height: 40px;
-    margin-top: 10px;
-  }
-  #startScreen {
-    text-align: center;
-    padding: 20px;
-  }
-  #gameTitle {
-    font-size: 48px;
-    font-weight: bold;
-    color: blue;
-    text-shadow: -2px -2px 0 #00ff00, 2px -2px 0 #00ff00, -2px 2px 0 #00ff00, 2px 2px 0 #00ff00;
-    margin-bottom: 30px;
-  }
-  #startButton {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 15px 40px;
-    font-size: 24px;
-    cursor: pointer;
-    border: 3px solid black; 
-    border-radius: 10px;
-    color: white;
-    animation: rainbow-flash-bg 1s infinite alternate; 
-  }
-  @keyframes rainbow-flash-bg {
-    0% { background-color: red; }
-    20% { background-color: orange; }
-    40% { background-color: yellow; }
-    60% { background-color: green; }
-    80% { background-color: blue; }
-    100% { background-color: purple; }
-  }
-</style>
+    <meta charset="UTF-8">
+    <title>Dungeon Architect 2026: The Final Edition</title>
+    <style>
+        body { background: #0a0a0c; color: #d4af37; font-family: 'Garamond', serif; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 5px; overflow: hidden; }
+        #ui { background: #1a1a1c; border: 2px solid #444; padding: 10px; border-radius: 5px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 950px; }
+        canvas { background: #050505; border: 3px solid #333; image-rendering: pixelated; touch-action: none; max-width: 100%; }
+        .btn { padding: 8px 10px; border: 1px solid #d4af37; background: #222; color: #d4af37; cursor: pointer; font-size: 0.75em; font-weight: bold; }
+        .selected { background: #d4af37; color: #111; box-shadow: 0 0 10px #d4af37; }
+        .gold { font-size: 1.2em; color: #ffd700; width: 100%; text-align: center; margin-bottom: 2px; }
+        #upgrade-menu { position: absolute; background: #111; border: 2px solid #ffd700; padding: 12px; display: none; flex-direction: column; gap: 8px; z-index: 2000; box-shadow: 0 0 20px #000; color: #fff; border-radius: 4px; }
+    </style>
 </head>
 <body>
-
-<div id="startScreen">
-    <div id="gameTitle">Salamander Friends</div>
-    <button id="startButton" onclick="startGame()">Start Game</button>
-</div>
-
-<div id="gameContainer">
-    <div id="codeArea">
-        Enter Code: <input type="text" id="codeInput" onkeydown="checkCode(event)" placeholder="Midas or Poseidon">
+    <div class="gold">TREASURY: <span id="gold-val">1500</span>g</div>
+    
+    <div id="upgrade-menu">
+        <div id="menu-title" style="font-weight:bold; color:#ffd700; border-bottom:1px solid #444;">TRAP INFO</div>
+        <div id="lvl-info">Level: 1</div>
+        <button class="btn" id="up-btn" onclick="applyUpgrade()">UPGRADE (75g)</button>
+        <button class="btn" onclick="closeMenu()" style="border-color:#555">BACK</button>
     </div>
 
-    <canvas id="gameCanvas" width="800" height="500"></canvas>
-
-    <div class="controls">
-      <button id="up" onmousedown="move('up', true)" onmouseup="move('up', false)" ontouchstart="move('up', true)" ontouchend="move('up', false)">↑</button>
-      <button id="left" onmousedown="move('left', true)" onmouseup="move('left', false)" ontouchstart="move('left', true)" ontouchend="move('left', false)">←</button>
-      <button id="down" onmousedown="move('down', true)" onmouseup="move('down', false)" ontouchstart="move('down', true)" ontouchend="move('down', false)">↓</button>
-      <button id="right" onmousedown="move('right', true)" onmouseup="move('right', false)" ontouchstart="move('right', true)" ontouchend="move('right', false)">→</button>
-      <button id="spawn" onclick="spawnNewSalamander()">Spawn Clone</button>
+    <div id="ui">
+        <button class="btn selected" onclick="setBrush('wall', 0, event)">WALL (FREE)</button>
+        <button class="btn" onclick="setBrush('barrier', 40, event)">BARRIER (40g)</button>
+        <button class="btn" onclick="setBrush('lava', 35, event)">LAVA (35g)</button>
+        <button class="btn" onclick="setBrush('acid', 35, event)">ACID (35g)</button>
+        <button class="btn" onclick="setBrush('guard', 150, event)">GUARD (150g)</button>
+        <button class="btn" onclick="setBrush('arrow', 100, event)">ARROW (100g)</button>
+        <button class="btn" onclick="setBrush('demon', 200, event)">DEMON (200g)</button>
+        <button class="btn" onclick="setBrush('rotate', 0, event)" style="border-color: #0088ff;">ROTATE</button>
+        <button class="btn" onclick="setBrush('sell', 0, event)" style="border-color: #f00;">DELETE/SELL</button>
+        <button class="btn" id="auto-btn" onclick="toggleAuto()">AUTO-SPAWN: OFF</button>
+        <button class="btn" onclick="rollAdventurer()" style="border-color: #0f0; width: 100%;">SUMMON HERO</button>
     </div>
-    <button id="discoButton" onclick="toggleDiscoMode()">DISCO MODE</button>
-</div>
-
+    <canvas id="dungeon" width="800" height="400"></canvas>
 
 <script>
-  const canvas = document.getElementById("gameCanvas");
-  const ctx = canvas.getContext("2d");
-  canvas.width = 800;
-  canvas.height = 500;
-  // Base dimensions (will be scaled for the player if necessary)
-  const BASE_CHAR_WIDTH = 100; 
-  const BASE_CHAR_HEIGHT = 25; 
-  const speed = 3;
-  const cloneSpeed = 1;
+    const canvas = document.getElementById('dungeon');
+    const ctx = canvas.getContext('2d');
+    const sz = 40, rows = 10, cols = 20;
+    let gold = 1500, brush = 'wall', cost = 0, prestige = 0, autoSpawn = false;
+    let menuTarget = null;
+    const spawn = {x: 20, y: 220}, treasure = {x: 760, y: 220};
+    let grid = Array.from({length: rows}, () => Array(cols).fill(null));
+    let arrows = [], demons = [], activeHero = null;
 
-  // Player dimension variables (dynamically updated by codes)
-  let characterWidth = BASE_CHAR_WIDTH;
-  let characterHeight = BASE_CHAR_HEIGHT;
-  
-  let playerBodyColor = "#444444";
-  let playerSpotColor = "#FFD700";
-  let playerLegColor = "#444444"; 
-  let playerHasHat = false; 
-  let playerHasSpidermanSuit = false; 
+    const Classes = [
+        { name: "Rogue", color: "#8a2be2", hp: 60, immune: "spike" },
+        { name: "Wizard", color: "#4b0082", hp: 70, immune: "arrow" },
+        { name: "Minotaur", color: "#5d4037", hp: 250, immune: "none" }
+    ];
 
-  const player = { x: 0, y: 0, angle: 0, dx: 0, dy: 0, spinSpeed: 0 };
-  const spawnedSalamanders = [];
-  const keys = { up: false, down: false, left: false, right: false };
-  let isDiscoMode = false; let discoIntervalId = null;
+    function setBrush(t, c, e) { brush = t; cost = c; document.querySelectorAll('.btn').forEach(b => b.classList.remove('selected')); if(e) e.target.classList.add('selected'); closeMenu(); }
+    function toggleAuto() { autoSpawn = !autoSpawn; const b = document.getElementById('auto-btn'); b.classList.toggle('selected'); b.innerText = `AUTO-SPAWN: ${autoSpawn ? 'ON' : 'OFF'}`; if(autoSpawn && !activeHero) rollAdventurer(); }
+    function closeMenu() { document.getElementById('upgrade-menu').style.display = 'none'; menuTarget = null; }
+    function applyUpgrade() { if(menuTarget && menuTarget.lvl < 3 && gold >= 75) { gold -= 75; menuTarget.lvl++; closeMenu(); } }
 
+    canvas.addEventListener('pointerdown', (e) => {
+        const r = canvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - r.left) / (r.width / cols)), y = Math.floor((e.clientY - r.top) / (r.height / rows));
+        if (y < 0 || y >= rows || x < 0 || x >= cols) return;
+        const ex = grid[y][x];
 
-  function checkCode(event) {
-      if (event.key === 'Enter') {
-          const code = document.getElementById("codeInput").value.toLowerCase();
-          // Reset accessories and size
-          playerHasHat = false; 
-          playerHasSpidermanSuit = false;
-          characterWidth = BASE_CHAR_WIDTH;
-          characterHeight = BASE_CHAR_HEIGHT;
+        if (brush === 'sell') { if (ex) { if (ex.type !== 'wall') gold += 20; grid[y][x] = null; } return; }
+        if (ex) {
+            if (brush === 'rotate') { ex.rot += Math.PI/2; return; }
+            if (ex.type !== 'wall') {
+                menuTarget = ex; const menu = document.getElementById('upgrade-menu');
+                menu.style.display = 'flex'; menu.style.left = Math.min(e.clientX, window.innerWidth - 150) + 'px'; menu.style.top = Math.min(e.clientY, window.innerHeight - 150) + 'px';
+                document.getElementById('lvl-info').innerText = "Level: " + ex.lvl; document.getElementById('up-btn').style.display = ex.lvl >= 3 ? 'none' : 'block';
+                return;
+            }
+        } else if (gold >= cost) { grid[y][x] = { type: brush, rot: 0, lastFire: Date.now(), hp: 100, lvl: 1 }; gold -= cost; }
+    });
 
-          switch(code) {
-              case 'midas':
-                  playerBodyColor = "#FFD700"; playerSpotColor = null; playerLegColor = "#FFD700"; break;
-              case 'poseidon':
-                  playerBodyColor = "#00BFFF"; playerSpotColor = null; playerLegColor = "#00BFFF"; break;
-              case 'spiderman':
-                  playerBodyColor = "#D50000"; playerSpotColor = null; playerLegColor = "#0047AB"; playerHasSpidermanSuit = true; break;
-              case 'ethan':
-                  playerBodyColor = "#FF69B4"; playerSpotColor = null; playerLegColor = "#FF69B4"; break;
-              case 'mrpen':
-                  playerBodyColor = "#D3D3D3"; playerSpotColor = null; playerLegColor = "#444444"; playerHasHat = true; break;
-              case 'sans': // New Code Case: Sans (Blue body, white head)
-                  playerBodyColor = "#0000FF"; // Blue body/tail
-                  playerSpotColor = null;
-                  playerLegColor = "#0000FF";
-                  // We handle the white head in the draw function logic
-                  break;
-              case 'amphibiousdlc': // New Code Case: Huge, dark grey, two yellow stripes
-                  playerBodyColor = "#444444"; // Dark grey
-                  playerSpotColor = "#FFD700"; // Yellow stripes (using spots logic for stripes)
-                  playerLegColor = "#444444";
-                  characterWidth = 200; // Make huge
-                  characterHeight = 50;
-                  break;
-              default: break;
-          }
-          document.getElementById("codeInput").value = '';
-      }
-  }
+    function rollAdventurer() { if (activeHero) return; const h = Classes[Math.floor(Math.random()*Classes.length)]; activeHero = { ...h, px: spawn.x, py: spawn.y, hp: h.hp + (prestige * 10), maxHp: h.hp + (prestige * 10) }; }
 
-  function drawSuitAndHat(drawX, drawY, isPlayerHat = false) {
-    if (!isPlayerHat) return; 
-    ctx.fillStyle = "#222222"; 
-    ctx.beginPath();
-    ctx.ellipse(drawX + characterWidth * 0.85, drawY + characterHeight * 0.05, 18 * (characterWidth/BASE_CHAR_WIDTH), 5 * (characterHeight/BASE_CHAR_HEIGHT), 0, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.fillRect(drawX + characterWidth * 0.85 - 12 * (characterWidth/BASE_CHAR_WIDTH), drawY + characterHeight * 0.05 - 20 * (characterHeight/BASE_CHAR_HEIGHT), 24 * (characterWidth/BASE_CHAR_WIDTH), 20 * (characterHeight/BASE_CHAR_HEIGHT));
-    ctx.fillStyle = "#444444"; 
-    ctx.fillRect(drawX + characterWidth * 0.45, drawY, characterWidth * 0.25, characterHeight);
-  }
-  
-  function drawSpidermanSuit(drawX, drawY, isSpiderman = false) {
-      if (!isSpiderman) return;
-      ctx.fillStyle = "#FFFFFF"; 
-      ctx.beginPath();
-      ctx.ellipse(drawX + characterWidth * 0.55, drawY + characterHeight * 0.5, 6, 4, 0, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.fillRect(drawX + characterWidth * 0.55 - 8, drawY + characterHeight * 0.5 - 1, 16, 2); 
-  }
+    function gameLoop() {
+        const now = Date.now();
+        for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) {
+            let t = grid[r][c]; if (!t || t.type === 'wall') continue;
+            if (t.type === 'arrow' && now - t.lastFire > (1300 - t.lvl*350)) { arrows.push({x: c*sz+20, y: r*sz+20, vx: Math.cos(t.rot)*7, vy: Math.sin(t.rot)*7, dmg: 10 + t.lvl*10}); t.lastFire = now; }
+            if (t.type === 'demon' && now - t.lastFire > (15000 / t.lvl)) { demons.push({px: c*sz+20, py: r*sz+20, isKing: Math.random()<0.01}); t.lastFire = now; }
+        }
 
+        if (activeHero) {
+            let a = Math.atan2(treasure.y - activeHero.py, treasure.x - activeHero.px);
+            let vx = Math.cos(a) * 2.2, vy = Math.sin(a) * 2.2;
+            let nx = activeHero.px + vx, ny = activeHero.py + vy;
+            let gx = Math.floor(nx/sz), gy = Math.floor(ny/sz);
+            let block = grid[gy]?.[gx];
 
-  function drawEnvironment() {
-      ctx.fillStyle = "white"; 
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
-  
-  function startGame() {
-      document.getElementById("startScreen").style.display = "none";
-      document.getElementById("gameContainer").style.display = "flex";
-      player.x = canvas.width / 2;
-      player.y = canvas.height / 2;
-      requestAnimationFrame(gameLoop);
-  }
+            if (block && block.type === 'wall') {
+                let canUp = !(grid[gy-1]?.[Math.floor(activeHero.px/sz)]?.type === 'wall');
+                let canDown = !(grid[gy+1]?.[Math.floor(activeHero.px/sz)]?.type === 'wall');
+                let canBack = !(grid[gy]?.[Math.floor((activeHero.px - vx)/sz)]?.type === 'wall');
+                if (canUp) activeHero.py -= 2.2; 
+                else if (canDown) activeHero.py += 2.2; 
+                else if (!canBack) { activeHero.px = treasure.x; activeHero.py = treasure.y; }
+                else activeHero.px -= 2.2;
+            } else if (block && block.type === 'barrier') {
+                if (activeHero.name === "Minotaur") grid[gy][gx] = null;
+                else { block.hp -= 2; if (block.hp <= 0) grid[gy][gx] = null; }
+            } else { activeHero.px = nx; activeHero.py = ny; }
 
-  function move(direction, isPressed) { keys[direction] = isPressed; event.preventDefault(); }
-  function getRandomColor() { const letters = '0123456789ABCDEF'; let color = '#'; for (let i = 0; i < 6; i++) { color += letters[Math.floor(Math.random() * 16)]; } return color; }
-  function flashRainbowBackground() { document.body.style.backgroundColor = getRandomColor(); }
-  function toggleDiscoMode() {
-      isDiscoMode = !isDiscoMode; const button = document.getElementById("discoButton");
-      if (isDiscoMode) { button.textContent = "STOP DISCO"; button.style.backgroundColor = "red"; discoIntervalId = setInterval(flashRainbowBackground, 100); [player, ...spawnedSalamanders].forEach(s => s.spinSpeed = 0.1); } 
-      else { button.textContent = "DISCO MODE"; button.style.backgroundColor = "purple"; clearInterval(discoIntervalId); document.body.style.backgroundColor = "#f0f0f0"; [player, ...spawnedSalamanders].forEach(s => s.spinSpeed = 0); }
-  }
-  function spawnNewSalamander() {
-    const randomX = Math.random() * (canvas.width - BASE_CHAR_WIDTH) + BASE_CHAR_WIDTH / 2; const randomY = Math.random() * (canvas.height - BASE_CHAR_HEIGHT) + BASE_CHAR_HEIGHT / 2;
-    // Clones always use base size
-    spawnedSalamanders.push({ x: randomX, y: randomY, angle: 0, color: getRandomColor(), spotColor: null, legColor: null, hasHat: false, hasSpiderman: false, width: BASE_CHAR_WIDTH, height: BASE_CHAR_HEIGHT, dx: (Math.random() - 0.5) * cloneSpeed * 2, dy: (Math.random() - 0.5) * cloneSpeed * 2, spinSpeed: 0 });
-  }
-  function changeCloneDirections() {
-      if (!isDiscoMode) { for (const salamander of spawnedSalamanders) { salamander.dx = (Math.random() - 0.5) * cloneSpeed * 2; salamander.dy = (Math.random() - 0.5) * cloneSpeed * 2; } }
-  }
-  setInterval(changeCloneDirections, 3000);
+            let t = grid[Math.floor(activeHero.py/sz)]?.[Math.floor(activeHero.px/sz)];
+            if (t && t.type !== activeHero.immune) activeHero.hp -= {lava:0.8*t.lvl, acid:1.2*t.lvl, guard:1.5*t.lvl}[t.type] || 0.1;
+            if (activeHero.hp <= 0 || activeHero.px >= treasure.x - 5) { gold += (activeHero.hp <= 0 ? 200 : -200); prestige++; activeHero = null; demons = demons.filter(d => d.isKing); if(autoSpawn) setTimeout(rollAdventurer, 1000); }
+        }
 
-  function drawSpots(drawX, drawY, spotColor, currentWidth, currentHeight) {
-      if (!spotColor) return; ctx.fillStyle = spotColor;
-      // Adjust spot positions based on current size ratio
-      const spots = [
-          {x: drawX + currentWidth * 0.15, y: drawY + currentHeight * 0.5}, {x: drawX + currentWidth * 0.35, y: drawY + currentHeight * 0.2}, 
-          {x: drawX + currentWidth * 0.35, y: drawY + currentHeight * 0.8}, {x: drawX + currentWidth * 0.5, y: drawY + currentHeight * 0.4}, 
-          {x: drawX + currentWidth * 0.6, y: drawY + currentHeight * 0.75}, {x: drawX + currentWidth * 0.8, y: drawY + currentHeight * 0.5},
-      ];
-      spots.forEach(spot => { ctx.beginPath(); ctx.arc(spot.x, spot.y, 3 * (currentWidth/BASE_CHAR_WIDTH), 0, 2 * Math.PI); ctx.fill(); });
-  }
-
-  function drawSalamander(x, y, drawAngle, color, spotColor, customLegColor, hasHat, hasSpiderman, currentWidth, currentHeight) {
-    ctx.save(); ctx.translate(x, y); ctx.rotate(drawAngle); 
-    const drawX = -currentWidth / 2; const drawY = -currentHeight / 2;
-    
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(drawX, drawY + currentHeight * 0.5); ctx.lineTo(drawX + currentWidth * 0.4, drawY); ctx.lineTo(drawX + currentWidth * 0.95, drawY); ctx.lineTo(drawX + currentWidth, drawY + currentHeight * 0.5); ctx.lineTo(drawX + currentWidth * 0.95, drawY + currentHeight); ctx.lineTo(drawX + currentWidth * 0.4, drawY + currentHeight);
-    ctx.closePath(); ctx.fill();
-
-    // Specific Sans code head override (White head section)
-    if (color === "#0000FF") {
-        ctx.fillStyle = "#FFFFFF"; // White
-        ctx.beginPath();
-        ctx.ellipse(
-            drawX + currentWidth * 0.85, drawY + currentHeight * 0.5, 
-            currentWidth * 0.12, currentHeight * 0.45,       
-            0, 0, 2 * Math.PI
-        );
-        ctx.fill();
+        demons.forEach(d => { if (activeHero) { let a = Math.atan2(activeHero.py-d.py, activeHero.px-d.px); d.px += Math.cos(a)*1.4; d.py += Math.sin(a)*1.4; if (Math.hypot(d.px-activeHero.px, d.py-activeHero.py) < 20) activeHero.hp -= 0.4; } });
+        arrows.forEach(a => { a.x += a.vx; a.y += a.vy; if(activeHero && Math.hypot(a.x-activeHero.px, a.y-activeHero.py) < 18) { activeHero.hp -= a.dmg; a.dead = true; } });
+        arrows = arrows.filter(a => !a.dead && a.x > 0 && a.x < 800 && a.y > 0 && a.y < 400);
+        render(); requestAnimationFrame(gameLoop);
     }
-    
-    ctx.fillStyle = customLegColor || color;
-    ctx.fillRect(drawX + currentWidth * 0.42, drawY + currentHeight - 5 * (currentHeight/BASE_CHAR_HEIGHT), 5 * (currentWidth/BASE_CHAR_WIDTH), 8 * (currentHeight/BASE_CHAR_HEIGHT)); 
-    ctx.fillRect(drawX + currentWidth * 0.42, drawY + 5 * (currentHeight/BASE_CHAR_HEIGHT) - 8 * (currentHeight/BASE_CHAR_HEIGHT), 5 * (currentWidth/BASE_CHAR_WIDTH), 8 * (currentHeight/BASE_CHAR_HEIGHT)); 
-    ctx.fillRect(drawX + currentWidth * 0.7, drawY + currentHeight - 5 * (currentHeight/BASE_CHAR_HEIGHT), 5 * (currentWidth/BASE_CHAR_WIDTH), 8 * (currentHeight/BASE_CHAR_HEIGHT)); 
-    ctx.fillRect(drawX + currentWidth * 0.7, drawY + 5 * (currentHeight/BASE_CHAR_HEIGHT) - 8 * (currentHeight/BASE_CHAR_HEIGHT), 5 * (currentWidth/BASE_CHAR_WIDTH), 8 * (currentHeight/BASE_CHAR_HEIGHT)); 
-    
-    // Pass correct width/height to spot drawer
-    drawSpots(drawX, drawY, spotColor, currentWidth, currentHeight); 
-    drawSuitAndHat(drawX, drawY, hasHat); 
-    drawSpidermanSuit(drawX, drawY, hasSpiderman); 
 
-    ctx.fillStyle = "black";
-    // Adjust eye size/position for scale
-    ctx.beginPath(); ctx.arc(drawX + currentWidth * 0.85, drawY + currentHeight * 0.25, 2.5 * (currentWidth/BASE_CHAR_WIDTH), 0, 2 * Math.PI); ctx.fill();
-    ctx.beginPath(); ctx.arc(drawX + currentWidth * 0.85, drawY + currentHeight * 0.75, 2.5 * (currentWidth/BASE_CHAR_WIDTH), 0, 2 * Math.PI); ctx.fill();
-    ctx.restore();
-  }
-
-  function gameLoop() {
-    drawEnvironment(); 
-    
-    // --- Update Player ---
-    if (!isDiscoMode) { 
-        player.dx = 0; player.dy = 0;
-        if (keys.up) player.dy -= speed; if (keys.down) player.dy += speed; if (keys.left) player.dx -= speed; if (keys.right) player.dx += speed;
-        if (player.dx !== 0 || player.dy !== 0) { player.angle = Math.atan2(player.dy, player.dx); }
-    } else { player.angle += player.spinSpeed; }
-    player.x += player.dx; player.y += player.dy;
-    // Use dynamic characterWidth/Height for player
-    player.x = Math.max(characterWidth / 2, Math.min(canvas.width - characterWidth / 2, player.x));
-    player.y = Math.max(characterHeight / 2, Math.min(canvas.height - characterHeight / 2, player.y));
-    
-    drawSalamander(player.x, player.y, player.angle, playerBodyColor, playerSpotColor, playerLegColor, playerHasHat, playerHasSpidermanSuit, characterWidth, characterHeight);
-
-    // --- Update and Draw Spawned Salamanders ---
-    for (const salamander of spawnedSalamanders) {
-        if (!isDiscoMode) {
-            salamander.x += salamander.dx; salamander.y += salamander.dy;
-            // Use clone's specific dimensions for collision
-            if (salamander.x <= salamander.width / 2 || salamander.x >= canvas.width - salamander.width / 2) { salamander.dx *= -1; }
-            if (salamander.y <= salamander.height / 2 || salamander.y >= canvas.height - salamander.height / 2) { salamander.dy *= -1; }
-            salamander.angle = Math.atan2(salamander.dy, salamander.dx);
-        } else { salamander.angle += salamander.spinSpeed; }
-        // Pass clone properties
-        drawSalamander(salamander.x, salamander.y, salamander.angle, salamander.color, salamander.spotColor, salamander.legColor, salamander.hasHat, salamander.hasSpiderman, salamander.width, salamander.height);
+    function render() {
+        ctx.clearRect(0,0,800,400); document.getElementById('gold-val').innerText = gold;
+        ctx.fillStyle = '#0f0'; ctx.fillRect(0, 200, 20, 40); ctx.fillStyle = '#fd0'; ctx.fillRect(780, 200, 20, 40);
+        for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) {
+            let t = grid[r][c]; if (!t) continue;
+            ctx.save(); ctx.translate(c*sz+20, r*sz+20);
+            if (t.type === 'wall') { ctx.fillStyle = '#333'; ctx.fillRect(-18,-18,36,36); }
+            else if (t.type === 'acid') { ctx.fillStyle = '#32cd32'; ctx.globalAlpha = 0.6; ctx.fillRect(-20,-20,40,40); ctx.globalAlpha = 1; }
+            else if (t.type === 'guard') { 
+                if (t.lvl < 3) { ctx.fillStyle = '#24a'; ctx.beginPath(); ctx.moveTo(0,-18); ctx.lineTo(15,15); ctx.lineTo(-15,15); ctx.fill(); }
+                else { ctx.fillStyle = '#d00'; ctx.beginPath(); ctx.moveTo(0,-20); ctx.lineTo(18,10); ctx.lineTo(-18,10); ctx.fill(); ctx.fillStyle = '#fa0'; ctx.fillRect(-25,-5,15,5); ctx.fillRect(10,-5,15,5); }
+            } else { ctx.rotate(t.rot); ctx.fillStyle = t.type === 'lava' ? (t.lvl===3?'#ff0':'#f40') : (t.type === 'barrier' ? '#543' : '#fff'); ctx.fillRect(-15,-15,30,30); }
+            if(t.type !== 'wall') { ctx.fillStyle = "#fff"; ctx.font = "bold 9px Arial"; ctx.fillText("L"+t.lvl, -10, 15); }
+            ctx.restore();
+        }
+        if (activeHero) {
+            ctx.fillStyle = activeHero.color; ctx.fillRect(activeHero.px-12, activeHero.py-12, 24, 24);
+            if (activeHero.name === "Minotaur") { ctx.fillStyle="#eee"; ctx.fillRect(activeHero.px-18, activeHero.py-15, 8, 4); ctx.fillRect(activeHero.px+10, activeHero.py-15, 8, 4); }
+            if (activeHero.name === "Wizard") { ctx.fillStyle="#00f"; ctx.beginPath(); ctx.moveTo(activeHero.px-12,activeHero.py-12); ctx.lineTo(activeHero.px,activeHero.py-28); ctx.lineTo(activeHero.px+12,activeHero.py-12); ctx.fill(); }
+        }
+        demons.forEach(d => { ctx.fillStyle = d.isKing ? '#f0f' : '#909'; ctx.fillRect(d.px-8, d.py-8, 16, 16); });
+        ctx.fillStyle = '#fff'; arrows.forEach(a => ctx.fillRect(a.x-2, a.y-2, 4, 4));
     }
-    requestAnimationFrame(gameLoop);
-  }
+    gameLoop();
 </script>
-
 </body>
 </html>
