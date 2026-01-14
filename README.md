@@ -1,198 +1,177 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Dungeon Architect 2026: Serpentine & Dragon Edition</title>
-    <style>
-        body { background: #0a0a0c; color: #d4af37; font-family: 'Garamond', serif; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 5px; overflow: hidden; }
-        #ui { background: #1a1a1c; border: 2px solid #444; padding: 10px; border-radius: 5px; display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; max-width: 950px; }
-        canvas { background: #050505; border: 3px solid #333; image-rendering: pixelated; touch-action: none; max-width: 100%; cursor: crosshair; }
-        .btn { padding: 6px 8px; border: 1px solid #d4af37; background: #222; color: #d4af37; cursor: pointer; font-size: 0.7em; font-weight: bold; }
-        .selected { background: #d4af37; color: #111; box-shadow: 0 0 10px #d4af37; }
-        .gold { font-size: 1.2em; color: #ffd700; width: 100%; text-align: center; margin-bottom: 2px; }
-        #merchant-ui, #evolution-ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1c; border: 3px solid #ffd700; padding: 20px; display: none; flex-direction: column; gap: 10px; z-index: 3000; box-shadow: 0 0 50px #000; border-radius: 8px; text-align: center; }
-    </style>
+<meta charset="UTF-8">
+<title>White World with Pink Throne & Harriet</title>
+<style>
+body{margin:0;overflow:hidden;font-family:Arial;}
+#ui{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.6);color:#fff;padding:10px;border-radius:6px;z-index:10}
+#prayBtn{position:absolute;bottom:40px;right:40px;width:90px;height:90px;border-radius:50%;background:#8e44ad;color:white;border:none;font-size:16px;z-index:10}
+#joystick{position:absolute;bottom:20px;left:20px;width:120px;height:120px;background:rgba(255,255,255,.2);border-radius:50%;z-index:10}
+#stick{width:50px;height:50px;background:#fff;border-radius:50%;position:absolute;left:35px;top:35px}
+</style>
 </head>
 <body>
-    <div class="gold">TREASURY: <span id="gold-val">1500</span>g | REPUTATION: <span id="prestige-val">0</span></div>
-    
-    <div id="merchant-ui">
-        <h2 style="margin:0; color:#ffd700;">MERCHANT'S BOUNTY</h2>
-        <button class="btn" onclick="buyBoost('strength')">STRENGTH BOOST (+20% Dmg)</button>
-        <button class="btn" onclick="buyBoost('treasure')">TREASURE BOOST (+20% Gold)</button>
-        <button class="btn" onclick="buyBoost('discount')">DISCOUNT BOOST (-10g Traps)</button>
-        <button class="btn" id="king-btn" style="display:none; border-color:#0ff;" onclick="buyBoost('king')">SKELETON KING (1000g)</button>
-    </div>
+<div id="ui">Use joystick to move</div>
+<button id="prayBtn">PRAY</button>
+<div id="joystick"><div id="stick"></div></div>
 
-    <div id="evolution-ui">
-        <h2 style="margin:0; color:#ff0;">EVOLVE GUARD</h2>
-        <button class="btn" onclick="evolve('dragon')">ELITE GUARD (Dragon - 100g)</button>
-        <button class="btn" onclick="evolve('serpentine')">COMMANDER (Serpentine - 100g)</button>
-        <button class="btn" onclick="document.getElementById('evolution-ui').style.display='none'">CANCEL</button>
-    </div>
-
-    <div id="ui">
-        <button class="btn selected" onclick="setBrush('wall', 0, event)">WALL (0g)</button>
-        <button class="btn" onclick="setBrush('spike', 50, event)">SPIKE (50g)</button>
-        <button class="btn" onclick="setBrush('lava', 35, event)">LAVA (35g)</button>
-        <button class="btn" onclick="setBrush('acid', 35, event)">ACID (35g)</button>
-        <button class="btn" onclick="setBrush('guard', 150, event)">GUARD (150g)</button>
-        <button class="btn" onclick="setBrush('arrow', 100, event)">ARROW (100g)</button>
-        <button class="btn" onclick="setBrush('demon', 200, event)">DEMON (200g)</button>
-        <button class="btn" id="btn-sking" style="display:none; border-color:#0ff;" onclick="setBrush('sking', 1000, event)">SKELETON KING (ONE-TIME)</button>
-        <button class="btn" onclick="setBrush('rotate', 0, event)" style="border-color: #0088ff;">ROTATE</button>
-        <button class="btn" onclick="setBrush('sell', 0, event)" style="border-color: #f00;">DELETE</button>
-        <button class="btn" id="auto-btn" onclick="toggleAuto()">AUTO-SPAWN: OFF</button>
-        <button class="btn" onclick="rollAdventurer()" style="border-color: #0f0; width: 100%;">SUMMON HERO</button>
-    </div>
-    <canvas id="dungeon" width="800" height="400"></canvas>
-
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
-    const canvas = document.getElementById('dungeon'), ctx = canvas.getContext('2d');
-    const sz = 25, rows = 16, cols = 32;
-    let gold = 1500, brush = 'wall', cost = 0, prestige = 0, autoSpawn = false;
-    let trapDiscount = 0, treasureMult = 1, strengthMult = 1;
-    let activeHeroes = [], demons = [], skeletons = [], projectiles = [];
-    let evoTarget = null;
 
-    const spawnX = 37.5, spawnY = 187.5, treasuryX = 762.5, treasuryY = 187.5;
-    let grid = Array.from({length: rows}, (_, r) => Array.from({length: cols}, (_, c) => {
-        if (r === 0 || r === rows-1 || c === 0 || c === cols-1) return {type:'wall', permanent:true, lvl:1, rot:0};
-        return null;
-    }));
+// ================= SCENE =================
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff);
 
-    function setBrush(t, c, e) { brush = t; cost = Math.max(0, c - trapDiscount); document.querySelectorAll('.btn').forEach(b => b.classList.remove('selected')); if(e) e.target.classList.add('selected'); }
-    function toggleAuto() { autoSpawn = !autoSpawn; document.getElementById('auto-btn').innerText = `AUTO-SPAWN: ${autoSpawn?'ON':'OFF'}`; if(autoSpawn && activeHeroes.length === 0) rollAdventurer(); }
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+camera.position.set(0, 3, 8);
 
-    function buyBoost(type) {
-        if (type === 'strength') strengthMult += 0.2;
-        if (type === 'treasure') treasureMult += 0.2;
-        if (type === 'discount') trapDiscount += 10;
-        if (type === 'king' && gold >= 1000) { gold -= 1000; document.getElementById('btn-sking').style.display = 'block'; }
-        document.getElementById('merchant-ui').style.display = 'none';
-    }
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
 
-    function evolve(type) {
-        if (gold >= 100 && evoTarget) {
-            gold -= 100;
-            evoTarget.lvl = type === 'dragon' ? 3 : 2; // lvl 3 = Dragon, lvl 2 = Serpentine
-            evoTarget.lastFire = Date.now();
-            document.getElementById('evolution-ui').style.display = 'none';
+const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+scene.add(ambient);
+
+const sun = new THREE.DirectionalLight(0xffffff, 0.5);
+sun.position.set(10,10,10);
+scene.add(sun);
+
+// ================= PLAYER =================
+const player = new THREE.Group();
+player.position.set(0,0,5);
+
+const skinMat = new THREE.MeshStandardMaterial({color:0xffd2b0});
+const clothMat = new THREE.MeshStandardMaterial({color:0x3498db}); // blue
+const body = new THREE.Mesh(new THREE.BoxGeometry(.8,1,.5), clothMat);
+body.position.y=1; player.add(body);
+const head = new THREE.Mesh(new THREE.BoxGeometry(.7,.7,.7), skinMat);
+head.position.y=1.8; player.add(head);
+
+// Face
+const eyeMat = new THREE.MeshStandardMaterial({color:0x000000});
+const leftEye = new THREE.Mesh(new THREE.BoxGeometry(.1,.1,.05), eyeMat); leftEye.position.set(-.15,1.85,.36);
+const rightEye = new THREE.Mesh(new THREE.BoxGeometry(.1,.1,.05), eyeMat); rightEye.position.set(.15,1.85,.36);
+const mouth = new THREE.Mesh(new THREE.BoxGeometry(.25,.05,.05), eyeMat); mouth.position.set(0,1.65,.36);
+player.add(leftEye,rightEye,mouth);
+
+// Limbs
+function limb(x,y,colorMat){const l=new THREE.Mesh(new THREE.BoxGeometry(.2,.7,.2), colorMat);l.position.set(x,y,0);player.add(l);return l;}
+const leftArm=limb(-.5,1.2,clothMat), rightArm=limb(.5,1.2,clothMat);
+const leftLeg=limb(-.2,0.35,clothMat), rightLeg=limb(.2,0.35,clothMat);
+
+scene.add(player);
+
+// ================= THRONE =================
+const throne = new THREE.Group();
+const pinkMat = new THREE.MeshStandardMaterial({color:0xff69b4});
+const goldMat = new THREE.MeshStandardMaterial({color:0xffd700});
+
+// Base seat
+const seat = new THREE.Mesh(new THREE.BoxGeometry(3,1,2), pinkMat);
+seat.position.y=0.5; throne.add(seat);
+
+// Backrest
+const back = new THREE.Mesh(new THREE.BoxGeometry(3,4,.5), pinkMat);
+back.position.set(0,2.5,-0.75); throne.add(back);
+
+// Golden top
+const goldTop = new THREE.Mesh(new THREE.BoxGeometry(3.2,.2,.7), goldMat);
+goldTop.position.set(0,4.6,-0.75); throne.add(goldTop);
+
+// Armrests
+const armL = new THREE.Mesh(new THREE.BoxGeometry(.3,1,.5), pinkMat);
+armL.position.set(-1.65,1,0); throne.add(armL);
+const armR = new THREE.Mesh(new THREE.BoxGeometry(.3,1,.5), pinkMat);
+armR.position.set(1.65,1,0); throne.add(armR);
+
+// ================= HARriet =================
+const harriet = new THREE.Group();
+
+// Clothes: darker pink than throne
+const hClothMat = new THREE.MeshStandardMaterial({color:0xff1493});
+const hBody = new THREE.Mesh(new THREE.BoxGeometry(.6,1,.4), hClothMat);
+hBody.position.y=0.5; harriet.add(hBody);
+const hHead = new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.5), skinMat);
+hHead.position.y=1.05; harriet.add(hHead);
+
+// Limbs
+function hLimb(x,y){return new THREE.Mesh(new THREE.BoxGeometry(.15,.6,.15), hClothMat);}
+const hLeftArm = hLimb(-0.35,0.8); hLeftArm.position.set(-0.35,0.8,0); harriet.add(hLeftArm);
+const hRightArm = hLimb(0.35,0.8); hRightArm.position.set(0.35,0.8,0); harriet.add(hRightArm);
+const hLeftLeg = hLimb(-0.15,0.0); hLeftLeg.position.set(-0.15,0,0); harriet.add(hLeftLeg);
+const hRightLeg = hLimb(0.15,0.0); hRightLeg.position.set(0.15,0,0); harriet.add(hRightLeg);
+
+harriet.position.set(0,1,0);
+throne.add(harriet);
+
+scene.add(throne);
+throne.position.set(0,0,0);
+
+// ================= PRAY ABILITY =================
+let praying = false;
+const prayBtn = document.getElementById("prayBtn");
+prayBtn.onclick = () => {
+    if(praying) return;
+    praying = true;
+
+    // Animate player head down
+    let t=0;
+    const prayAnim = setInterval(()=>{
+        t+=0.05;
+        player.rotation.x = Math.sin(t)*0.5;
+        if(t>=Math.PI){
+            clearInterval(prayAnim);
+            player.rotation.x=0;
+            praying=false;
         }
+    },16);
+};
+
+// ================= JOYSTICK =================
+let joyX=0, joyY=0, drag=false;
+const joystick=document.getElementById("joystick");
+const stick=document.getElementById("stick");
+
+joystick.ontouchstart = ()=>drag=true;
+joystick.ontouchend = ()=>{drag=false; joyX=0; joyY=0; stick.style.left="35px"; stick.style.top="35px";}
+joystick.ontouchmove = e => {
+  if(!drag) return;
+  const r=joystick.getBoundingClientRect(), t=e.touches[0];
+  let x = t.clientX - r.left - 60;
+  let y = t.clientY - r.top - 60;
+  const d = Math.min(40, Math.hypot(x,y)), a=Math.atan2(y,x);
+  joyX = Math.cos(a)*(d/40); joyY = Math.sin(a)*(d/40);
+  stick.style.left = 35 + joyX*40 + "px";
+  stick.style.top = 35 + joyY*40 + "px";
+};
+
+// ================= ANIMATE =================
+function animate(){
+    requestAnimationFrame(animate);
+
+    if(!praying){
+        // Move player
+        player.position.x += joyX*0.12;
+        player.position.z += joyY*0.12;
+        if(joyX!=0 || joyY!=0) player.rotation.y = Math.atan2(joyX, joyY);
     }
 
-    canvas.addEventListener('pointerdown', (e) => {
-        const r = canvas.getBoundingClientRect();
-        const x = Math.floor((e.clientX - r.left) / (r.width / cols)), y = Math.floor((e.clientY - r.top) / (r.height / rows));
-        let t = grid[y][x];
-        if (t && t.type === 'guard' && brush !== 'sell') { evoTarget = t; document.getElementById('evolution-ui').style.display = 'flex'; return; }
-        if (brush === 'rotate' && t && !t.permanent) { t.rot += Math.PI/2; return; }
-        if (brush === 'sell' && t && !t.permanent) { gold += 20; grid[y][x] = null; return; }
-        if (!t && gold >= cost) { grid[y][x] = { type: brush, lastFire: Date.now(), lvl: 1, rot: 0 }; gold -= cost; }
-    });
+    // Limb animation
+    const t=performance.now()*0.002;
+    leftArm.rotation.x=Math.sin(t)*0.4; rightArm.rotation.x=-Math.sin(t)*0.4;
+    leftLeg.rotation.x=-Math.sin(t)*0.4; rightLeg.rotation.x=Math.sin(t)*0.4;
 
-    function rollAdventurer() {
-        if (activeHeroes.length > 0) return;
-        const r = Math.random();
-        if (r < 0.10) spawnHero("Merchant", 0);
-        else { const c = ["Rogue","Knight","Priest","Minotaur","Wizard", "Lizard", "Dragonborn"]; spawnHero(c[Math.floor(Math.random()*c.length)], 0); }
-    }
+    // Camera follows
+    camera.position.x = player.position.x;
+    camera.position.z = player.position.z + 8;
+    camera.position.y = player.position.y + 3;
+    camera.lookAt(player.position);
 
-    function spawnHero(n, off) {
-        const stats = { Rogue:{c:"#8a2be2",h:80,im:["spike"],s:1.6}, Knight:{c:"#c0c0c0",h:240,im:[],s:0.8}, Priest:{c:"#fffacd",h:110,im:["demon"],s:0.8}, Wizard:{c:"#4b0082",h:90,im:["arrow"],s:0.8}, Minotaur:{c:"#5d4037",h:320,im:[],s:0.8}, Merchant:{c:"#ffd700",h:380,im:[],s:0.8}, Lizard:{c:"#228b22",h:140,im:["acid"],s:0.8}, Dragonborn:{c:"#ff8c00",h:170,im:["lava"],s:0.8} };
-        const s = stats[n]; activeHeroes.push({ name:n, color:s.c, px:spawnX + off, py:spawnY, hp:s.h+(prestige*10), maxHp:s.h+(prestige*10), im:s.im, speed:s.s });
-    }
+    renderer.render(scene,camera);
+}
+animate();
 
-    function gameLoop() {
-        const now = Date.now();
-        for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) {
-            let t = grid[r][c]; if (!t) continue;
-            if (t.type === 'guard' && t.lvl === 3 && activeHeroes.length > 0 && now - t.lastFire > 10000) { // 10s cooldown
-                let h = activeHeroes;
-                let a = Math.atan2(h.py - (r*sz+sz/2), h.px - (c*sz+sz/2));
-                projectiles.push({x:c*sz+sz/2, y:r*sz+sz/2, vx:Math.cos(a)*4, vy:Math.sin(a)*4, type:'fireball'}); t.lastFire = now;
-            }
-            if (t.type === 'arrow' && now - t.lastFire > 1500) { projectiles.push({x:c*sz+sz/2, y:r*sz+sz/2, vx:Math.cos(t.rot)*6, vy:Math.sin(t.rot)*6, type:'arrow'}); t.lastFire = now; }
-            if (t.type === 'demon' && now - t.lastFire > 8000) { demons.push({px:c*sz+sz/2, py:r*sz+sz/2, isKing: Math.random()<0.01}); t.lastFire = now; }
-            if (t.type === 'sking' && now - t.lastFire > 4000) { skeletons.push({px:c*sz+sz/2, py:r*sz+sz/2}); t.lastFire = now; }
-        }
-
-        activeHeroes.forEach(h => {
-            let a = Math.atan2(treasuryY-h.py, treasuryX-h.px), nx = h.px+Math.cos(a)*h.speed, ny = h.py+Math.sin(a)*h.speed;
-            let gx = Math.floor(nx/sz), gy = Math.floor(ny/sz);
-            if (grid[gy]?.[gx]?.type === 'wall') {
-                if (!(grid[gy-1]?.[Math.floor(h.px/sz)]?.type === 'wall')) h.py -= h.speed; else if (!(grid[gy+1]?.[Math.floor(h.px/sz)]?.type === 'wall')) h.py += h.speed; else h.px = treasuryX;
-            } else { h.px = nx; h.py = ny; }
-
-            let t = grid[Math.floor(h.py/sz)]?.[Math.floor(h.px/sz)];
-            if (t) {
-                let d = {lava:0.8, acid:1.2, spike:1.0}[t.type] || 0.1;
-                if (t.type === 'guard') d = t.lvl === 2 ? 6.0 : 1.5; // Serpentine (lvl 2) deals 6.0 dmg
-                if (h.name === "Knight" && t.type === "guard" && t.lvl < 3) d = 0;
-                if (h.im.includes(t.type)) d = 0;
-                h.hp -= d * strengthMult;
-            }
-            if (h.hp <= 0 || h.px >= (treasuryX - 10)) {
-                if (h.hp <= 0) {
-                    gold += 150*treasureMult; prestige++; demons = demons.filter(d => d.isKing);
-                    if (h.name === "Merchant") { document.getElementById('merchant-ui').style.display='flex'; document.getElementById('king-btn').style.display = (Math.random()<0.05)?'block':'none'; }
-                } else { 
-                    gold -= 350; demons = []; skeletons = []; 
-                    // Clear One-Time Skeleton King on theft
-                    for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) if(grid[r][c]?.type === 'sking') grid[r][c] = null;
-                }
-                activeHeroes = activeHeroes.filter(hero => hero !== h);
-            }
-        });
-
-        projectiles.forEach(p => { p.x += p.vx; p.y += p.vy; 
-            if(activeHeroes.length > 0 && Math.hypot(p.x-activeHeroes.px, p.y-activeHeroes.py) < 15) { activeHeroes.hp -= p.type === 'fireball' ? 40 : 15; p.dead = true; } 
-        });
-        projectiles = projectiles.filter(p => !p.dead && p.x > 0 && p.x < 800 && p.y > 0 && p.y < 400);
-
-        [...demons, ...skeletons].forEach(m => {
-            if (activeHeroes.length > 0) {
-                let h = activeHeroes, a = Math.atan2(h.py-m.py, h.px-m.px); m.px += Math.cos(a)*1.4; m.py += Math.sin(a)*1.4;
-                if (Math.hypot(m.px-h.px, m.py-h.py) < 18) { if (!(h.name === "Priest" && !m.isKing)) h.hp -= 0.4 * strengthMult; }
-            }
-        });
-
-        if (autoSpawn && activeHeroes.length === 0) setTimeout(rollAdventurer, 1000);
-        render(); requestAnimationFrame(gameLoop);
-    }
-
-    function render() {
-        ctx.clearRect(0,0,800,400); document.getElementById('gold-val').innerText = Math.floor(gold);
-        ctx.fillStyle = '#0f0'; ctx.fillRect(sz,spawnY-15,10,30); ctx.fillStyle = '#fd0'; ctx.fillRect(775-sz,treasuryY-15,10,30);
-        for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) {
-            let t = grid[r][c]; if (!t) continue;
-            ctx.save(); ctx.translate(c*sz+sz/2, r*sz+sz/2); ctx.rotate(t.rot);
-            if (t.type === 'wall') { ctx.fillStyle = t.permanent ? '#111' : '#222'; ctx.fillRect(-sz/2+1, -sz/2+1, sz-2, sz-2); }
-            else if (t.type === 'guard') {
-                if (t.lvl === 3) { ctx.fillStyle = '#f00'; ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(12,12); ctx.lineTo(-12,12); ctx.fill(); ctx.fillStyle='#ff0'; ctx.fillRect(-4,2,8,4); }
-                else if (t.lvl === 2) { ctx.fillStyle = '#0f0'; ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(8,12); ctx.lineTo(-8,12); ctx.fill(); } // Serpentine
-                else { ctx.fillStyle = '#24a'; ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(10,10); ctx.lineTo(-10,10); ctx.fill(); }
-            } else if (t.type === 'lava') { ctx.fillStyle = '#f40'; ctx.fillRect(-sz/2, -sz/2, sz, sz); }
-            else if (t.type === 'spike') { ctx.fillStyle = '#777'; ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(8,10); ctx.lineTo(-8,10); ctx.fill(); }
-            else if (t.type === 'acid') { ctx.fillStyle = '#141'; ctx.fillRect(-sz/2, -sz/2, sz, sz); ctx.fillStyle = '#32cd32'; ctx.globalAlpha = 0.4; ctx.beginPath(); ctx.arc(0,0,8,0,Math.PI*2); ctx.fill(); ctx.globalAlpha = 1; }
-            else if (t.type === 'arrow') { ctx.fillStyle='#444'; ctx.fillRect(-8,-3,16,6); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.moveTo(8,0); ctx.lineTo(0,-4); ctx.lineTo(0,4); ctx.fill(); }
-            else if (t.type === 'demon') { ctx.strokeStyle='#f00'; ctx.lineWidth=1; ctx.strokeRect(-10,-10,20,20); }
-            else if (t.type === 'sking') { ctx.fillStyle='#fff'; ctx.fillRect(-12,-12,24,24); ctx.fillStyle='#0ff'; ctx.fillRect(-8,-6,4,4); ctx.fillStyle='#0f0'; ctx.fillRect(4,-6,4,4); }
-            ctx.restore();
-        }
-        activeHeroes.forEach(h => {
-            ctx.fillStyle = h.color; ctx.fillRect(h.px-8, h.py-8, 16, 16);
-            if (h.name === "Lizard") { ctx.strokeStyle="#228b22"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(h.px-8, h.py+4); ctx.quadraticCurveTo(h.px-20, h.py+15, h.px-25, h.py+5); ctx.stroke(); }
-            if (h.name === "Dragonborn") { ctx.fillStyle="#ff8c00"; ctx.beginPath(); ctx.moveTo(h.px-8, h.py-5); ctx.lineTo(h.px-18, h.py-15); ctx.lineTo(h.px-8, h.py-10); ctx.fill(); ctx.beginPath(); ctx.moveTo(h.px+8, h.py-5); ctx.lineTo(h.px+18, h.py-15); ctx.lineTo(h.px+8, h.py-10); ctx.fill(); }
-            ctx.fillStyle='#f00'; ctx.fillRect(h.px-12, h.py-18, 24, 3);
-            ctx.fillStyle='#0f0'; ctx.fillRect(h.px-12, h.py-18, 24*(h.hp/h.maxHp), 3);
-            ctx.fillStyle="#fff"; ctx.font="7px Arial"; ctx.fillText(h.name, h.px-10, h.py-22);
-        });
-        projectiles.forEach(p => { ctx.fillStyle = p.type === 'fireball' ? '#f50' : '#fff'; ctx.beginPath(); ctx.arc(p.x, p.y, p.type === 'fireball' ? 6 : 2, 0, Math.PI*2); ctx.fill(); });
-        skeletons.forEach(s => { ctx.fillStyle='#eee'; ctx.fillRect(s.px-4, s.py-4, 8, 8); });
-        demons.forEach(d => { ctx.fillStyle=d.isKing?'#f0f':'#909'; ctx.beginPath(); ctx.arc(d.px,d.py,6,0,Math.PI*2); ctx.fill(); });
-    }
-    gameLoop();
 </script>
 </body>
 </html>
