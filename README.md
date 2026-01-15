@@ -63,8 +63,8 @@ body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
   position:fixed;
   bottom:10px; left:50%;
   transform:translateX(-50%);
-  display:flex; gap:18px;
   display:none;
+  gap:18px;
 }
 .ending{
   width:56px;height:56px;
@@ -102,12 +102,19 @@ body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
 
 <div id="endings">
   <div id="end-good" class="ending"><div class="cheese good"></div></div>
-  <div id="end-boss" class="ending"><div class="cheese mouldy"></div></div>
   <div id="end-walk" class="ending"><div class="cheese wander"></div></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
 <script>
+/* ================= DOM FIX (IMPORTANT) ================= */
+const startScreen = document.getElementById("startScreen");
+const startBtn = document.getElementById("startBtn");
+const joystick = document.getElementById("joystick");
+const endings = document.getElementById("endings");
+const endGood = document.getElementById("end-good");
+const endWalk = document.getElementById("end-walk");
+
 /* ================= START ================= */
 let started=false;
 startBtn.onclick=()=>{
@@ -308,7 +315,7 @@ function animate(){
     walkTimer++;
     if(walkTimer>3600 && !gotWalkEnding){
       gotWalkEnding=true;
-      document.getElementById("end-walk").classList.add("glow");
+      endWalk.classList.add("glow");
     }
   }
 
@@ -333,7 +340,7 @@ function animate(){
 
     if(!gotGoodEnding){
       gotGoodEnding=true;
-      document.getElementById("end-good").classList.add("glow");
+      endGood.classList.add("glow");
     }
     setTimeout(resetGame,5000);
   }
