@@ -1,353 +1,250 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>Cheese Triumph</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
-
-/* START SCREEN */
-#startScreen{
-  position:fixed; inset:0;
-  background:#ddd;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  z-index:10;
-}
-#title{
-  font-size:64px;
-  font-weight:900;
-  margin-bottom:40px;
-  transform:perspective(600px) rotateX(15deg);
-}
-#title span{color:#ffd700}
-#title .c{color:#7fbf3f}
-#startBtn{
-  padding:20px 50px;
-  font-size:28px;
-  font-weight:bold;
-  color:white;
-  background:#1e6bff;
-  border:none;
-  border-radius:14px;
-  box-shadow:0 10px 0 #0d3da8;
-}
-#startBtn:active{
-  box-shadow:0 4px 0 #0d3da8;
-  transform:translateY(6px);
-}
-
-/* JOYSTICK */
-#joystick{
-  position:fixed;
-  bottom:90px; left:30px;
+html,body{margin:0;overflow:hidden;background:#ddd;font-family:sans-serif}
+#ui{position:fixed;top:0;left:0;width:100%;pointer-events:none}
+#msg{position:absolute;top:10px;width:100%;text-align:center;font-weight:bold}
+#timer{position:absolute;top:40px;width:100%;text-align:center;color:red}
+#minimap{
+  position:fixed;top:10px;right:10px;
   width:120px;height:120px;
-  border-radius:50%;
-  background:rgba(0,0,0,.25);
-  display:none;
+  background:#222;border-radius:8px
+}
+#joystick{
+  position:fixed;bottom:30px;left:30px;
+  width:120px;height:120px;border-radius:50%;
+  background:rgba(0,0,0,.3);display:none;pointer-events:auto
 }
 #stick{
-  position:absolute;
-  left:40px;top:40px;
-  width:40px;height:40px;
-  border-radius:50%;
-  background:rgba(0,0,0,.6);
+  position:absolute;left:40px;top:40px;
+  width:40px;height:40px;border-radius:50%;
+  background:#aaa
 }
-
-/* ENDINGS */
+#startScreen{
+  position:fixed;inset:0;
+  background:#ddd;display:flex;
+  flex-direction:column;align-items:center;justify-content:center
+}
+#startBtn{
+  background:#2979ff;color:white;
+  padding:20px 40px;border-radius:12px;
+  font-size:24px;cursor:pointer
+}
+h1{color:yellow;font-size:48px}
+h1 span{color:#5a8f5a}
 #endings{
-  position:fixed;
-  bottom:10px; left:50%;
+  position:fixed;bottom:10px;left:50%;
   transform:translateX(-50%);
-  display:none;
-  gap:18px;
+  display:flex;gap:20px;pointer-events:none
 }
-.ending{
-  width:56px;height:56px;
-  border-radius:50%;
-  border:3px solid #444;
-  background:#bbb;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  opacity:.35;
+.orb{
+  width:40px;height:40px;border-radius:50%;
+  background:#444;opacity:.3
 }
-.ending.glow{
-  opacity:1;
-  box-shadow:0 0 14px 6px rgba(255,255,255,.8);
-}
-.cheese{
-  width:26px;height:26px;
-  clip-path:polygon(0 0,100% 50%,0 100%);
-}
-.good{background:#ffd700}
-.mouldy{background:#7fbf3f}
-.wander{background:#d0d0d0}
+.orb.on{opacity:1;box-shadow:0 0 10px yellow}
 </style>
 </head>
 <body>
 
 <div id="startScreen">
-  <div id="title">
-    <span class="c">C</span><span>HEESE TRIUMPH</span>
-  </div>
-  <button id="startBtn">START</button>
+  <h1><span>C</span>HEESE TRIUMPH</h1>
+  <div id="startBtn">START</div>
 </div>
+
+<div id="ui">
+  <div id="msg">GIVE THE GOOD CHEESE TO THE WIZARD!!! he likes them fresh</div>
+  <div id="timer"></div>
+</div>
+
+<div id="minimap"></div>
 
 <div id="joystick"><div id="stick"></div></div>
 
 <div id="endings">
-  <div id="end-good" class="ending"><div class="cheese good"></div></div>
-  <div id="end-mouldy" class="ending"><div class="cheese mouldy"></div></div>
-  <div id="end-walk" class="ending"><div class="cheese wander"></div></div>
+  <div id="orbGood" class="orb"></div>
+  <div id="orbMouldy" class="orb"></div>
+  <div id="orbWander" class="orb"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
-/* DOM */
-const startScreen=document.getElementById("startScreen");
-const startBtn=document.getElementById("startBtn");
-const joystick=document.getElementById("joystick");
-const endings=document.getElementById("endings");
-const endGood=document.getElementById("end-good");
-const endMouldy=document.getElementById("end-mouldy");
-const endWalk=document.getElementById("end-walk");
+/* ---------- DOM ---------- */
+const startScreen = document.getElementById("startScreen");
+const startBtn = document.getElementById("startBtn");
+const joystick = document.getElementById("joystick");
+const stick = document.getElementById("stick");
+const msg = document.getElementById("msg");
+const timerUI = document.getElementById("timer");
+const minimap = document.getElementById("minimap");
+const orbGood = document.getElementById("orbGood");
+const orbMouldy = document.getElementById("orbMouldy");
+const orbWander = document.getElementById("orbWander");
 
-/* FLAGS */
+/* ---------- THREE ---------- */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#ffffff");
+
+const camera = new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,500);
+camera.position.set(0,5,10);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+document.body.appendChild(renderer.domElement);
+
+/* ---------- WORLD ---------- */
+const groundMat = new THREE.MeshLambertMaterial({color:"#ccc"});
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(500,500),groundMat);
+ground.rotation.x = -Math.PI/2;
+scene.add(ground);
+
+const light = new THREE.DirectionalLight(0xffffff,1);
+light.position.set(10,20,10);
+scene.add(light);
+scene.add(new THREE.AmbientLight(0xffffff,.5));
+
+/* ---------- PLAYER ---------- */
+const player = new THREE.Mesh(
+  new THREE.BoxGeometry(1,1,1),
+  new THREE.MeshLambertMaterial({color:"#bfbfbf"})
+);
+player.position.y=.5;
+scene.add(player);
+
+/* helmet base */
+const base = new THREE.Mesh(
+  new THREE.BoxGeometry(1,.3,1),
+  new THREE.MeshLambertMaterial({color:"#555"})
+);
+base.position.y=-.35;
+player.add(base);
+
+/* face grate */
+const grate = new THREE.Mesh(
+  new THREE.PlaneGeometry(.6,.6),
+  new THREE.MeshBasicMaterial({color:"#666"})
+);
+grate.position.z=.51;
+player.add(grate);
+
+/* ---------- WIZARD ---------- */
+const wizard = new THREE.Mesh(
+  new THREE.ConeGeometry(1,2,8),
+  new THREE.MeshLambertMaterial({color:"indigo"})
+);
+wizard.position.set(10,1,10);
+scene.add(wizard);
+
+/* ---------- CHEESES ---------- */
+function makeCheese(color){
+  const g = new THREE.ConeGeometry(.5,1,3);
+  const m = new THREE.MeshLambertMaterial({color});
+  const c = new THREE.Mesh(g,m);
+  c.rotation.x=Math.PI/2;
+  return c;
+}
+
+const goodCheese = makeCheese("yellow");
+goodCheese.position.set(-10,1,-10);
+scene.add(goodCheese);
+
+const mouldyCheese = makeCheese("#9acd32");
+mouldyCheese.position.set(45,1,45);
+scene.add(mouldyCheese);
+
+/* ---------- GAME STATE ---------- */
 let started=false;
-let holding=null;
-let touchedCheese=false;
-let walkTimer=0;
-let gotGood=false;
-let gotMouldy=false;
-let gotWalk=false;
+let carrying=null;
+let boss=false;
+let bossTimer=0;
+let immune=0;
 
-/* START */
+/* ---------- START ---------- */
 startBtn.onclick=()=>{
   startScreen.style.display="none";
   joystick.style.display="block";
-  endings.style.display="flex";
   started=true;
 };
 
-/* SCENE */
-const scene=new THREE.Scene();
-scene.background=new THREE.Color(0xffffff);
-
-const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,500);
-const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(innerWidth,innerHeight);
-renderer.outputColorSpace=THREE.SRGBColorSpace;
-document.body.appendChild(renderer.domElement);
-
-scene.add(new THREE.AmbientLight(0xffffff,1));
-const sun=new THREE.DirectionalLight(0xffffff,1.2);
-sun.position.set(10,20,10);
-scene.add(sun);
-
-/* GROUND */
-const ground=new THREE.Mesh(
-  new THREE.PlaneGeometry(500,500),
-  new THREE.MeshStandardMaterial({color:0xdddddd})
-);
-ground.rotation.x=-Math.PI/2;
-scene.add(ground);
-
-/* PLAYER */
-const knight=new THREE.Group();
-const body=new THREE.Mesh(
-  new THREE.BoxGeometry(1,1,1),
-  new THREE.MeshStandardMaterial({color:0xaaaaaa})
-);
-body.position.y=.5;
-knight.add(body);
-
-const band=new THREE.Mesh(
-  new THREE.BoxGeometry(1.01,.25,1.01),
-  new THREE.MeshStandardMaterial({color:0x444444})
-);
-band.position.y=.125;
-knight.add(band);
-
-/* HELMET GRATE */
-for(let i=-1;i<=1;i++){
-  const slit=new THREE.Mesh(
-    new THREE.BoxGeometry(.05,.35,.01),
-    new THREE.MeshStandardMaterial({color:0x444444})
-  );
-  slit.position.set(i*.15,.65,.505);
-  knight.add(slit);
-}
-scene.add(knight);
-
-/* WIZARD MATERIAL */
-function wizardMaterial(base,spot){
-  const c=document.createElement("canvas");
-  c.width=c.height=512;
-  const x=c.getContext("2d");
-  x.fillStyle=base;
-  x.fillRect(0,0,512,512);
-  x.fillStyle=spot;
-  for(let i=0;i<14;i++){
-    x.beginPath();
-    x.arc((i%7)*70+50,Math.floor(i/7)*140+80,28,0,Math.PI*2);
-    x.fill();
-  }
-  return new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(c)});
-}
-
-/* WIZARD */
-const wizard=new THREE.Mesh(
-  new THREE.ConeGeometry(1,2,32),
-  wizardMaterial("#4b0082","#ffd700")
-);
-wizard.position.set(6,1,0);
-scene.add(wizard);
-
-/* GOOD CHEESE */
-const goodCheese=new THREE.Mesh(
-  new THREE.ConeGeometry(.6,1,3),
-  new THREE.MeshStandardMaterial({
-    color:0xffd700,
-    emissive:0xffd700,
-    emissiveIntensity:.5
-  })
-);
-goodCheese.rotation.x=Math.PI/2;
-scene.add(goodCheese);
-
-/* MOULDY CHEESE — NORMAL SIZE, FAR AWAY */
-const mouldyCheese=new THREE.Mesh(
-  new THREE.ConeGeometry(.6,1,3),
-  new THREE.MeshStandardMaterial({
-    color:0x7fbf3f,
-    emissive:0x3b5f1f,
-    emissiveIntensity:.4
-  })
-);
-mouldyCheese.rotation.x=Math.PI/2;
-scene.add(mouldyCheese);
-
-/* CROWN */
-let crown=null;
-function giveCrown(){
-  if(crown)return;
-  crown=new THREE.Group();
-  const ring=new THREE.Mesh(
-    new THREE.TorusGeometry(.6,.15,12,24),
-    new THREE.MeshStandardMaterial({color:0xffc400})
-  );
-  ring.rotation.x=Math.PI/2;
-  crown.add(ring);
-  for(let i=0;i<3;i++){
-    const spike=new THREE.Mesh(
-      new THREE.ConeGeometry(.15,.4,6),
-      new THREE.MeshStandardMaterial({color:0xffc400})
-    );
-    spike.position.set(
-      Math.cos(i*2*Math.PI/3)*.4,
-      .35,
-      Math.sin(i*2*Math.PI/3)*.4
-    );
-    crown.add(spike);
-  }
-  crown.position.y=1.6;
-  knight.add(crown);
-}
-
-/* CONTROLS */
-let forward=0,turn=0;
-const SPEED=.06,TURN=.04;
-joystick.ontouchend=()=>{forward=turn=0};
+/* ---------- INPUT ---------- */
+let joy={x:0,y:0};
 joystick.ontouchmove=e=>{
   const r=joystick.getBoundingClientRect();
   const t=e.touches[0];
-  forward=-(t.clientY-r.top-60)/40;
-  turn=(t.clientX-r.left-60)/40;
+  joy.x=(t.clientX-r.left-60)/40;
+  joy.y=(t.clientY-r.top-60)/40;
 };
 
-/* RESET */
+/* ---------- LOOP ---------- */
 function resetGame(){
-  holding=null;
-  touchedCheese=false;
-  walkTimer=0;
-
-  knight.position.set(0,0,0);
-  knight.rotation.y=0;
-
-  wizard.position.set(6,1,0);
-
-  goodCheese.position.set(-6,1,0);
-  mouldyCheese.position.set(80,1,80); // FAR → looks like a pixel
-
-  if(crown){knight.remove(crown);crown=null;}
+  boss=false;
+  bossTimer=0;
+  immune=0;
+  carrying=null;
+  player.position.set(0,.5,0);
+  wizard.position.set(10,1,10);
+  goodCheese.position.set(-10,1,-10);
+  mouldyCheese.position.set(45,1,45);
+  scene.background=new THREE.Color("#fff");
+  ground.material.color.set("#ccc");
+  msg.textContent="GIVE THE GOOD CHEESE TO THE WIZARD!!! he likes them fresh";
+  timerUI.textContent="";
 }
 
-/* LOOP */
-resetGame();
 function animate(){
   requestAnimationFrame(animate);
-  if(!started)return;
+  if(!started) return;
 
-  goodCheese.rotation.y+=.04;
-  mouldyCheese.rotation.y+=.02;
+  const speed = boss ? .045 : .05;
+  player.position.x += joy.x*speed;
+  player.position.z += joy.y*speed;
 
-  knight.rotation.y-=turn*TURN;
-  knight.position.x+=Math.sin(knight.rotation.y)*forward*SPEED;
-  knight.position.z+=Math.cos(knight.rotation.y)*forward*SPEED;
-
-  camera.position.set(
-    knight.position.x-Math.sin(knight.rotation.y)*8,
-    6,
-    knight.position.z-Math.cos(knight.rotation.y)*8
-  );
-  camera.lookAt(knight.position.x,1,knight.position.z);
-
-  /* WANDERER */
-  if(!touchedCheese){
-    walkTimer++;
-    if(walkTimer>3600&&!gotWalk){
-      gotWalk=true;
-      endWalk.classList.add("glow");
-    }
+  if(joy.x||joy.y){
+    player.rotation.y=Math.atan2(joy.x,joy.y);
+    camera.position.lerp(
+      new THREE.Vector3(
+        player.position.x-joy.x*6,
+        5,
+        player.position.z-joy.y*6
+      ),.1
+    );
+    camera.lookAt(player.position);
   }
 
-  /* PICKUP */
-  if(!holding){
-    if(knight.position.distanceTo(goodCheese.position)<1.2){
-      holding=goodCheese;
-      touchedCheese=true;
-    } else if(knight.position.distanceTo(mouldyCheese.position)<1.2){
-      holding=mouldyCheese;
-      touchedCheese=true;
-    }
+  if(!carrying && player.position.distanceTo(goodCheese.position)<1){
+    carrying="good";
+  }
+  if(!carrying && player.position.distanceTo(mouldyCheese.position)<1){
+    carrying="mouldy";
+    boss=true;
+    immune=5;
+    scene.background=new THREE.Color("#550000");
+    ground.material.color.set("#444");
+    msg.textContent="";
   }
 
-  if(holding){
-    holding.position.set(knight.position.x,1.6,knight.position.z);
+  if(carrying){
+    const target = carrying==="good"?wizard:player;
+    (carrying==="good"?goodCheese:mouldyCheese)
+      .position.lerp(target.position.clone().add(new THREE.Vector3(0,2,0)),.2);
   }
 
-  /* GIVE */
-  if(holding && knight.position.distanceTo(wizard.position)<1.8){
-    if(holding===goodCheese){
-      giveCrown();
-      endGood.classList.add("glow");
-      gotGood=true;
+  if(boss){
+    immune=Math.max(0,immune-.016);
+    bossTimer+=.016;
+    timerUI.textContent=(30-bossTimer).toFixed(1);
+    wizard.position.lerp(player.position,.01);
+    if(bossTimer>30){
+      orbMouldy.classList.add("on");
+      resetGame();
     }
-    if(holding===mouldyCheese){
-      endMouldy.classList.add("glow");
-      gotMouldy=true;
-    }
-    holding.position.set(-999,-999,-999);
-    holding=null;
-    setTimeout(resetGame,5000);
   }
 
   renderer.render(scene,camera);
 }
+resetGame();
 animate();
 </script>
 </body>
