@@ -219,9 +219,9 @@ const goodCheese=new THREE.Mesh(
 goodCheese.rotation.x=Math.PI/2;
 scene.add(goodCheese);
 
-/* MOULDY CHEESE (CLOSER) */
+/* MOULDY CHEESE — NORMAL SIZE, FAR AWAY */
 const mouldyCheese=new THREE.Mesh(
-  new THREE.ConeGeometry(.4,.8,3),
+  new THREE.ConeGeometry(.6,1,3),
   new THREE.MeshStandardMaterial({
     color:0x7fbf3f,
     emissive:0x3b5f1f,
@@ -229,7 +229,6 @@ const mouldyCheese=new THREE.Mesh(
   })
 );
 mouldyCheese.rotation.x=Math.PI/2;
-mouldyCheese.scale.set(0.25,0.25,0.25);
 scene.add(mouldyCheese);
 
 /* CROWN */
@@ -282,7 +281,7 @@ function resetGame(){
   wizard.position.set(6,1,0);
 
   goodCheese.position.set(-6,1,0);
-  mouldyCheese.position.set(45,1,45); // ← CLOSER SECRET CHEESE
+  mouldyCheese.position.set(80,1,80); // FAR → looks like a pixel
 
   if(crown){knight.remove(crown);crown=null;}
 }
