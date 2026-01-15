@@ -219,7 +219,7 @@ const goodCheese=new THREE.Mesh(
 goodCheese.rotation.x=Math.PI/2;
 scene.add(goodCheese);
 
-/* MOULDY CHEESE — FIXED & VISIBLE */
+/* MOULDY CHEESE (CLOSER) */
 const mouldyCheese=new THREE.Mesh(
   new THREE.ConeGeometry(.4,.8,3),
   new THREE.MeshStandardMaterial({
@@ -229,7 +229,7 @@ const mouldyCheese=new THREE.Mesh(
   })
 );
 mouldyCheese.rotation.x=Math.PI/2;
-mouldyCheese.scale.set(0.25,0.25,0.25); // tiny green pixel
+mouldyCheese.scale.set(0.25,0.25,0.25);
 scene.add(mouldyCheese);
 
 /* CROWN */
@@ -282,7 +282,7 @@ function resetGame(){
   wizard.position.set(6,1,0);
 
   goodCheese.position.set(-6,1,0);
-  mouldyCheese.position.set(80,1,80); // FAR BUT REACHABLE
+  mouldyCheese.position.set(45,1,45); // ← CLOSER SECRET CHEESE
 
   if(crown){knight.remove(crown);crown=null;}
 }
@@ -307,7 +307,7 @@ function animate(){
   );
   camera.lookAt(knight.position.x,1,knight.position.z);
 
-  /* WANDERER ENDING */
+  /* WANDERER */
   if(!touchedCheese){
     walkTimer++;
     if(walkTimer>3600&&!gotWalk){
