@@ -137,7 +137,7 @@ startBtn.onclick=()=>{
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0xffffff);
 
-const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,1000);
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,500);
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);
 renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -219,16 +219,17 @@ const goodCheese=new THREE.Mesh(
 goodCheese.rotation.x=Math.PI/2;
 scene.add(goodCheese);
 
-/* MOULDY CHEESE (RESTORED) */
+/* MOULDY CHEESE — FIXED & VISIBLE */
 const mouldyCheese=new THREE.Mesh(
   new THREE.ConeGeometry(.4,.8,3),
   new THREE.MeshStandardMaterial({
     color:0x7fbf3f,
     emissive:0x3b5f1f,
-    emissiveIntensity:.3
+    emissiveIntensity:.4
   })
 );
 mouldyCheese.rotation.x=Math.PI/2;
+mouldyCheese.scale.set(0.25,0.25,0.25); // tiny green pixel
 scene.add(mouldyCheese);
 
 /* CROWN */
@@ -281,7 +282,7 @@ function resetGame(){
   wizard.position.set(6,1,0);
 
   goodCheese.position.set(-6,1,0);
-  mouldyCheese.position.set(200,1,200); // VERY FAR = green pixel
+  mouldyCheese.position.set(80,1,80); // FAR BUT REACHABLE
 
   if(crown){knight.remove(crown);crown=null;}
 }
@@ -306,7 +307,7 @@ function animate(){
   );
   camera.lookAt(knight.position.x,1,knight.position.z);
 
-  /* WANDERER */
+  /* WANDERER ENDING */
   if(!touchedCheese){
     walkTimer++;
     if(walkTimer>3600&&!gotWalk){
