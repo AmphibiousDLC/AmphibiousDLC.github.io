@@ -25,7 +25,6 @@ body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
 }
 #title span{color:#ffd700}
 #title .c{color:#7fbf3f}
-
 #startBtn{
   padding:20px 50px;
   font-size:28px;
@@ -58,7 +57,7 @@ body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
   background:rgba(0,0,0,.6);
 }
 
-/* ENDINGS UI */
+/* ENDINGS */
 #endings{
   position:fixed;
   bottom:10px; left:50%;
@@ -102,21 +101,31 @@ body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
 
 <div id="endings">
   <div id="end-good" class="ending"><div class="cheese good"></div></div>
+  <div id="end-mouldy" class="ending"><div class="cheese mouldy"></div></div>
   <div id="end-walk" class="ending"><div class="cheese wander"></div></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
 <script>
-/* ================= DOM FIX (IMPORTANT) ================= */
-const startScreen = document.getElementById("startScreen");
-const startBtn = document.getElementById("startBtn");
-const joystick = document.getElementById("joystick");
-const endings = document.getElementById("endings");
-const endGood = document.getElementById("end-good");
-const endWalk = document.getElementById("end-walk");
+/* DOM */
+const startScreen=document.getElementById("startScreen");
+const startBtn=document.getElementById("startBtn");
+const joystick=document.getElementById("joystick");
+const endings=document.getElementById("endings");
+const endGood=document.getElementById("end-good");
+const endMouldy=document.getElementById("end-mouldy");
+const endWalk=document.getElementById("end-walk");
 
-/* ================= START ================= */
+/* FLAGS */
 let started=false;
+let holding=null;
+let touchedCheese=false;
+let walkTimer=0;
+let gotGood=false;
+let gotMouldy=false;
+let gotWalk=false;
+
+/* START */
 startBtn.onclick=()=>{
   startScreen.style.display="none";
   joystick.style.display="block";
@@ -124,14 +133,7 @@ startBtn.onclick=()=>{
   started=true;
 };
 
-/* ================= FLAGS ================= */
-let gotGoodEnding=false;
-let gotWalkEnding=false;
-let walkTimer=0;
-let touchedCheese=false;
-let holding=null;
-
-/* ================= SCENE ================= */
+/* SCENE */
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0xffffff);
 
@@ -147,8 +149,10 @@ sun.position.set(10,20,10);
 scene.add(sun);
 
 /* GROUND */
-const groundMat=new THREE.MeshStandardMaterial({color:0xdddddd});
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500),groundMat);
+const ground=new THREE.Mesh(
+  new THREE.PlaneGeometry(500,500),
+  new THREE.MeshStandardMaterial({color:0xdddddd})
+);
 ground.rotation.x=-Math.PI/2;
 scene.add(ground);
 
@@ -168,7 +172,7 @@ const band=new THREE.Mesh(
 band.position.y=.125;
 knight.add(band);
 
-// helmet grate
+/* HELMET GRATE */
 for(let i=-1;i<=1;i++){
   const slit=new THREE.Mesh(
     new THREE.BoxGeometry(.05,.35,.01),
@@ -179,7 +183,7 @@ for(let i=-1;i<=1;i++){
 }
 scene.add(knight);
 
-/* WIZARD */
+/* WIZARD MATERIAL */
 function wizardMaterial(base,spot){
   const c=document.createElement("canvas");
   c.width=c.height=512;
@@ -195,6 +199,7 @@ function wizardMaterial(base,spot){
   return new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(c)});
 }
 
+/* WIZARD */
 const wizard=new THREE.Mesh(
   new THREE.ConeGeometry(1,2,32),
   wizardMaterial("#4b0082","#ffd700")
@@ -202,7 +207,7 @@ const wizard=new THREE.Mesh(
 wizard.position.set(6,1,0);
 scene.add(wizard);
 
-/* CHEESE */
+/* GOOD CHEESE */
 const goodCheese=new THREE.Mesh(
   new THREE.ConeGeometry(.6,1,3),
   new THREE.MeshStandardMaterial({
@@ -214,10 +219,22 @@ const goodCheese=new THREE.Mesh(
 goodCheese.rotation.x=Math.PI/2;
 scene.add(goodCheese);
 
+/* MOULDY CHEESE (RESTORED) */
+const mouldyCheese=new THREE.Mesh(
+  new THREE.ConeGeometry(.4,.8,3),
+  new THREE.MeshStandardMaterial({
+    color:0x7fbf3f,
+    emissive:0x3b5f1f,
+    emissiveIntensity:.3
+  })
+);
+mouldyCheese.rotation.x=Math.PI/2;
+scene.add(mouldyCheese);
+
 /* CROWN */
 let crown=null;
 function giveCrown(){
-  if(crown) return;
+  if(crown)return;
   crown=new THREE.Group();
   const ring=new THREE.Mesh(
     new THREE.TorusGeometry(.6,.15,12,24),
@@ -241,31 +258,6 @@ function giveCrown(){
   knight.add(crown);
 }
 
-/* CONFETTI */
-const confetti=[];
-function spawnConfetti(){
-  for(let i=0;i<30;i++){
-    const p=new THREE.Mesh(
-      new THREE.BoxGeometry(.1,.1,.1),
-      new THREE.MeshStandardMaterial({
-        color:new THREE.Color().setHSL(Math.random(),1,.6)
-      })
-    );
-    p.position.set(
-      knight.position.x+(Math.random()-0.5)*4,
-      4+Math.random()*2,
-      knight.position.z+(Math.random()-0.5)*4
-    );
-    p.speed=.02+Math.random()*.03;
-    scene.add(p);
-    confetti.push(p);
-  }
-  setTimeout(()=>{
-    confetti.forEach(c=>scene.remove(c));
-    confetti.length=0;
-  },6000);
-}
-
 /* CONTROLS */
 let forward=0,turn=0;
 const SPEED=.06,TURN=.04;
@@ -279,14 +271,17 @@ joystick.ontouchmove=e=>{
 
 /* RESET */
 function resetGame(){
-  walkTimer=0;
-  touchedCheese=false;
   holding=null;
+  touchedCheese=false;
+  walkTimer=0;
 
   knight.position.set(0,0,0);
   knight.rotation.y=0;
+
   wizard.position.set(6,1,0);
+
   goodCheese.position.set(-6,1,0);
+  mouldyCheese.position.set(200,1,200); // VERY FAR = green pixel
 
   if(crown){knight.remove(crown);crown=null;}
 }
@@ -295,9 +290,10 @@ function resetGame(){
 resetGame();
 function animate(){
   requestAnimationFrame(animate);
-  if(!started) return;
+  if(!started)return;
 
   goodCheese.rotation.y+=.04;
+  mouldyCheese.rotation.y+=.02;
 
   knight.rotation.y-=turn*TURN;
   knight.position.x+=Math.sin(knight.rotation.y)*forward*SPEED;
@@ -313,39 +309,43 @@ function animate(){
   /* WANDERER */
   if(!touchedCheese){
     walkTimer++;
-    if(walkTimer>3600 && !gotWalkEnding){
-      gotWalkEnding=true;
+    if(walkTimer>3600&&!gotWalk){
+      gotWalk=true;
       endWalk.classList.add("glow");
     }
   }
 
   /* PICKUP */
-  if(!holding && knight.position.distanceTo(goodCheese.position)<1.2){
-    holding=goodCheese;
-    touchedCheese=true;
-  }
-  if(holding===goodCheese){
-    goodCheese.position.set(knight.position.x,1.6,knight.position.z);
-  }
-
-  /* GIVE CHEESE */
-  if(holding===goodCheese &&
-     knight.position.distanceTo(wizard.position)<1.8){
-
-    holding=null;
-    goodCheese.position.set(-999,-999,-999);
-
-    giveCrown();
-    spawnConfetti();
-
-    if(!gotGoodEnding){
-      gotGoodEnding=true;
-      endGood.classList.add("glow");
+  if(!holding){
+    if(knight.position.distanceTo(goodCheese.position)<1.2){
+      holding=goodCheese;
+      touchedCheese=true;
+    } else if(knight.position.distanceTo(mouldyCheese.position)<1.2){
+      holding=mouldyCheese;
+      touchedCheese=true;
     }
+  }
+
+  if(holding){
+    holding.position.set(knight.position.x,1.6,knight.position.z);
+  }
+
+  /* GIVE */
+  if(holding && knight.position.distanceTo(wizard.position)<1.8){
+    if(holding===goodCheese){
+      giveCrown();
+      endGood.classList.add("glow");
+      gotGood=true;
+    }
+    if(holding===mouldyCheese){
+      endMouldy.classList.add("glow");
+      gotMouldy=true;
+    }
+    holding.position.set(-999,-999,-999);
+    holding=null;
     setTimeout(resetGame,5000);
   }
 
-  confetti.forEach(p=>p.position.y-=p.speed);
   renderer.render(scene,camera);
 }
 animate();
