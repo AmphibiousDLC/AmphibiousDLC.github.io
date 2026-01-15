@@ -7,10 +7,9 @@
 <style>
 body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
 
-/* ================= START SCREEN ================= */
+/* START SCREEN */
 #startScreen{
-  position:fixed;
-  inset:0;
+  position:fixed; inset:0;
   background:#ddd;
   display:flex;
   flex-direction:column;
@@ -18,11 +17,9 @@ body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
   justify-content:center;
   z-index:10;
 }
-
 #title{
   font-size:64px;
   font-weight:900;
-  letter-spacing:4px;
   margin-bottom:40px;
   transform:perspective(600px) rotateX(15deg);
 }
@@ -44,11 +41,10 @@ body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
   transform:translateY(6px);
 }
 
-/* ================= GAME UI ================= */
+/* JOYSTICK */
 #joystick{
   position:fixed;
-  bottom:90px;
-  left:30px;
+  bottom:90px; left:30px;
   width:120px;height:120px;
   border-radius:50%;
   background:rgba(0,0,0,.25);
@@ -62,13 +58,12 @@ body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
   background:rgba(0,0,0,.6);
 }
 
+/* ENDINGS UI */
 #endings{
   position:fixed;
-  bottom:10px;
-  left:50%;
+  bottom:10px; left:50%;
   transform:translateX(-50%);
-  display:flex;
-  gap:18px;
+  display:flex; gap:18px;
   display:none;
 }
 .ending{
@@ -85,7 +80,6 @@ body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
   opacity:1;
   box-shadow:0 0 14px 6px rgba(255,255,255,.8);
 }
-
 .cheese{
   width:26px;height:26px;
   clip-path:polygon(0 0,100% 50%,0 100%);
@@ -97,7 +91,6 @@ body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
 </head>
 <body>
 
-<!-- START SCREEN -->
 <div id="startScreen">
   <div id="title">
     <span class="c">C</span><span>HEESE TRIUMPH</span>
@@ -105,7 +98,6 @@ body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
   <button id="startBtn">START</button>
 </div>
 
-<!-- GAME UI -->
 <div id="joystick"><div id="stick"></div></div>
 
 <div id="endings">
@@ -116,28 +108,27 @@ body{margin:0;overflow:hidden;font-family:sans-serif;background:#ddd}
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
 <script>
-/* ================= START LOGIC ================= */
+/* ================= START ================= */
 let started=false;
-document.getElementById("startBtn").onclick=()=>{
-  document.getElementById("startScreen").style.display="none";
-  document.getElementById("joystick").style.display="block";
-  document.getElementById("endings").style.display="flex";
+startBtn.onclick=()=>{
+  startScreen.style.display="none";
+  joystick.style.display="block";
+  endings.style.display="flex";
   started=true;
 };
 
 /* ================= FLAGS ================= */
 let gotGoodEnding=false;
-let gotBossEnding=false;
 let gotWalkEnding=false;
-
 let walkTimer=0;
 let touchedCheese=false;
+let holding=null;
 
 /* ================= SCENE ================= */
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0xffffff);
 
-const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.1,1000);
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,1000);
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);
 renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -148,13 +139,13 @@ const sun=new THREE.DirectionalLight(0xffffff,1.2);
 sun.position.set(10,20,10);
 scene.add(sun);
 
-/* ================= GROUND ================= */
+/* GROUND */
 const groundMat=new THREE.MeshStandardMaterial({color:0xdddddd});
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500),groundMat);
 ground.rotation.x=-Math.PI/2;
 scene.add(ground);
 
-/* ================= PLAYER ================= */
+/* PLAYER */
 const knight=new THREE.Group();
 const body=new THREE.Mesh(
   new THREE.BoxGeometry(1,1,1),
@@ -181,7 +172,7 @@ for(let i=-1;i<=1;i++){
 }
 scene.add(knight);
 
-/* ================= WIZARD ================= */
+/* WIZARD */
 function wizardMaterial(base,spot){
   const c=document.createElement("canvas");
   c.width=c.height=512;
@@ -204,7 +195,7 @@ const wizard=new THREE.Mesh(
 wizard.position.set(6,1,0);
 scene.add(wizard);
 
-/* ================= CHEESES ================= */
+/* CHEESE */
 const goodCheese=new THREE.Mesh(
   new THREE.ConeGeometry(.6,1,3),
   new THREE.MeshStandardMaterial({
@@ -216,32 +207,84 @@ const goodCheese=new THREE.Mesh(
 goodCheese.rotation.x=Math.PI/2;
 scene.add(goodCheese);
 
-/* ================= RESET ================= */
-function resetGame(){
-  walkTimer=0;
-  touchedCheese=false;
-
-  knight.position.set(0,0,0);
-  knight.rotation.y=0;
-  wizard.position.set(6,1,0);
-
-  goodCheese.position.set(-6,1,0);
+/* CROWN */
+let crown=null;
+function giveCrown(){
+  if(crown) return;
+  crown=new THREE.Group();
+  const ring=new THREE.Mesh(
+    new THREE.TorusGeometry(.6,.15,12,24),
+    new THREE.MeshStandardMaterial({color:0xffc400})
+  );
+  ring.rotation.x=Math.PI/2;
+  crown.add(ring);
+  for(let i=0;i<3;i++){
+    const spike=new THREE.Mesh(
+      new THREE.ConeGeometry(.15,.4,6),
+      new THREE.MeshStandardMaterial({color:0xffc400})
+    );
+    spike.position.set(
+      Math.cos(i*2*Math.PI/3)*.4,
+      .35,
+      Math.sin(i*2*Math.PI/3)*.4
+    );
+    crown.add(spike);
+  }
+  crown.position.y=1.6;
+  knight.add(crown);
 }
 
-/* ================= CONTROLS ================= */
+/* CONFETTI */
+const confetti=[];
+function spawnConfetti(){
+  for(let i=0;i<30;i++){
+    const p=new THREE.Mesh(
+      new THREE.BoxGeometry(.1,.1,.1),
+      new THREE.MeshStandardMaterial({
+        color:new THREE.Color().setHSL(Math.random(),1,.6)
+      })
+    );
+    p.position.set(
+      knight.position.x+(Math.random()-0.5)*4,
+      4+Math.random()*2,
+      knight.position.z+(Math.random()-0.5)*4
+    );
+    p.speed=.02+Math.random()*.03;
+    scene.add(p);
+    confetti.push(p);
+  }
+  setTimeout(()=>{
+    confetti.forEach(c=>scene.remove(c));
+    confetti.length=0;
+  },6000);
+}
+
+/* CONTROLS */
 let forward=0,turn=0;
 const SPEED=.06,TURN=.04;
-
-const joy=document.getElementById("joystick");
-joy.ontouchend=()=>{forward=turn=0};
-joy.ontouchmove=e=>{
-  const r=joy.getBoundingClientRect();
+joystick.ontouchend=()=>{forward=turn=0};
+joystick.ontouchmove=e=>{
+  const r=joystick.getBoundingClientRect();
   const t=e.touches[0];
   forward=-(t.clientY-r.top-60)/40;
   turn=(t.clientX-r.left-60)/40;
 };
 
-/* ================= LOOP ================= */
+/* RESET */
+function resetGame(){
+  walkTimer=0;
+  touchedCheese=false;
+  holding=null;
+
+  knight.position.set(0,0,0);
+  knight.rotation.y=0;
+  wizard.position.set(6,1,0);
+  goodCheese.position.set(-6,1,0);
+
+  if(crown){knight.remove(crown);crown=null;}
+}
+
+/* LOOP */
 resetGame();
 function animate(){
   requestAnimationFrame(animate);
@@ -260,6 +303,7 @@ function animate(){
   );
   camera.lookAt(knight.position.x,1,knight.position.z);
 
+  /* WANDERER */
   if(!touchedCheese){
     walkTimer++;
     if(walkTimer>3600 && !gotWalkEnding){
@@ -268,6 +312,33 @@ function animate(){
     }
   }
 
+  /* PICKUP */
+  if(!holding && knight.position.distanceTo(goodCheese.position)<1.2){
+    holding=goodCheese;
+    touchedCheese=true;
+  }
+  if(holding===goodCheese){
+    goodCheese.position.set(knight.position.x,1.6,knight.position.z);
+  }
+
+  /* GIVE CHEESE */
+  if(holding===goodCheese &&
+     knight.position.distanceTo(wizard.position)<1.8){
+
+    holding=null;
+    goodCheese.position.set(-999,-999,-999);
+
+    giveCrown();
+    spawnConfetti();
+
+    if(!gotGoodEnding){
+      gotGoodEnding=true;
+      document.getElementById("end-good").classList.add("glow");
+    }
+    setTimeout(resetGame,5000);
+  }
+
+  confetti.forEach(p=>p.position.y-=p.speed);
   renderer.render(scene,camera);
 }
 animate();
