@@ -38,10 +38,12 @@ html, body {
   border: 2px solid #888;
   border-radius: 8px;
   padding: 6px;
-  width: 180px;
+  width: 190px;
+  font-size: 13px;
 }
 .btn.selected {
   border-color: orange;
+  background: #fff3dd;
 }
 </style>
 </head>
@@ -74,10 +76,14 @@ scene.add(new THREE.AmbientLight(0xffffff, 1));
 /* ================= MATERIALS ================= */
 const mats = {
   grass: new THREE.MeshBasicMaterial({ color: 0x2a6a32 }),
+  grassLight: new THREE.MeshBasicMaterial({ color: 0x4caf50 }),
   path: new THREE.MeshBasicMaterial({ color: 0x8b6b3e }),
   wool: new THREE.MeshBasicMaterial({ color: 0xdddddd }),
+  goat: new THREE.MeshBasicMaterial({ color: 0xc8b07a }),
   enemy: new THREE.MeshBasicMaterial({ color: 0xcc3333 }),
   dark: new THREE.MeshBasicMaterial({ color: 0x444444 }),
+  horn: new THREE.MeshBasicMaterial({ color: 0x8b5a2b }),
+  metal: new THREE.MeshBasicMaterial({ color: 0xb0b0b0 }),
   wood: new THREE.MeshBasicMaterial({ color: 0x8b5a2b })
 };
 
@@ -97,7 +103,6 @@ const path = [
   new THREE.Vector3(40, 0, 60)
 ];
 
-// visual tiles
 for (let i = 0; i < path.length - 1; i++) {
   const a = path[i], b = path[i + 1];
   const len = a.distanceTo(b);
@@ -134,13 +139,13 @@ for (let z = -50; z <= -30; z += 4) {
   }
 }
 
-/* ================= MODELS ================= */
-function makeEnemy() {
+/* ================= BASE SHEEP ================= */
+function baseSheep(woolMat) {
   const g = new THREE.Group();
 
   const body = new THREE.Mesh(
-    new THREE.SphereGeometry(1.2, 8, 8),
-    mats.enemy
+    new THREE.SphereGeometry(1.3, 8, 8),
+    woolMat
   );
   body.position.y = 1.4;
   g.add(body);
@@ -149,11 +154,11 @@ function makeEnemy() {
     new THREE.BoxGeometry(0.6, 0.6, 0.6),
     mats.dark
   );
-  face.position.set(0, 1.4, 1.1);
+  face.position.set(0, 1.4, 1.2);
   g.add(face);
 
-  [-0.4, 0.4].forEach(x => {
-    [-0.4, 0.4].forEach(z => {
+  [-0.5, 0.5].forEach(x => {
+    [-0.5, 0.5].forEach(z => {
       const leg = new THREE.Mesh(
         new THREE.CylinderGeometry(0.12, 0.12, 0.8),
         mats.dark
@@ -163,45 +168,114 @@ function makeEnemy() {
     });
   });
 
-  // health bar
-  const bar = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.5, 0.3),
-    new THREE.MeshBasicMaterial({ color: 0x00ff00 })
-  );
-  bar.position.y = 3;
-  g.add(bar);
+  return g;
+}
 
-  g.bar = bar;
-  g.hp = 20;
-  g.max = 20;
-  g.pathIndex = 0;
+/* ================= TOWERS ================= */
+function cubeTower() {
+  return baseSheep(mats.wool);
+}
+
+function ramTower() {
+  const g = baseSheep(mats.wool);
+  [-1, 1].forEach(s => {
+    const horn = new THREE.Mesh(
+      new THREE.TorusGeometry(0.5, 0.15, 8, 16),
+      mats.horn
+    );
+    horn.rotation.y = Math.PI / 2;
+    horn.position.set(0.7 * s, 1.8, 0.4);
+    g.add(horn);
+  });
+  return g;
+}
+
+function goatTower() {
+  const g = baseSheep(mats.goat);
+  g.scale.set(1.2, 1.2, 1.2);
+  [-1, 1].forEach(s => {
+    const horn = new THREE.Mesh(
+      new THREE.TorusGeometry(1.2, 0.18, 8, 20),
+      mats.horn
+    );
+    horn.rotation.y = Math.PI / 2;
+    horn.position.set(1.1 * s, 2.2, 0.3);
+    g.add(horn);
+  });
+  return g;
+}
+
+function grazerTower() {
+  const g = new THREE.Group();
+
+  const cube = new THREE.Mesh(
+    new THREE.BoxGeometry(2.6, 1.2, 2.6),
+    mats.grassLight
+  );
+  cube.position.y = 0.6;
+  g.add(cube);
+
+  const sheep = baseSheep(mats.wool);
+  sheep.scale.set(0.5, 0.5, 0.5);
+  sheep.position.y = 1.5;
+  g.add(sheep);
 
   return g;
 }
 
-/* ================= ENEMIES ================= */
-const enemies = [];
-let spawnTimer = 0;
+function shearerTower() {
+  const g = new THREE.Group();
 
-function spawnEnemy() {
-  const e = makeEnemy();
-  e.position.copy(path[0]);
-  enemies.push(e);
-  scene.add(e);
+  const pillar = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.6, 0.6, 3),
+    mats.metal
+  );
+  pillar.position.y = 1.5;
+  g.add(pillar);
+
+  const blade1 = new THREE.Mesh(
+    new THREE.BoxGeometry(0.2, 1.5, 0.1),
+    mats.metal
+  );
+  blade1.position.set(-0.3, 3.2, 0);
+  blade1.rotation.z = 0.4;
+  g.add(blade1);
+
+  const blade2 = blade1.clone();
+  blade2.position.x = 0.3;
+  blade2.rotation.z = -0.4;
+  g.add(blade2);
+
+  return g;
 }
 
-/* ================= TOWERS (PLACEMENT ONLY) ================= */
-const TOWERS = { Cube: 10 };
+/* ================= TOWER DATA ================= */
+const TOWERS = {
+  Cube: { cost: 10, build: cubeTower },
+  Ram: { cost: 25, build: ramTower },
+  Grazer: { cost: 100, build: grazerTower },
+  Shearer: { cost: 250, build: shearerTower },
+  Goat: { cost: 500, build: goatTower }
+};
+
 let wool = 500;
 let selected = "Cube";
 
+/* ================= MENU ================= */
 const menu = document.getElementById("menu");
-const b = document.createElement("div");
-b.className = "btn selected";
-b.textContent = "Cube (10)";
-menu.appendChild(b);
+for (const k in TOWERS) {
+  const b = document.createElement("div");
+  b.className = "btn" + (k === selected ? " selected" : "");
+  b.textContent = `${k} (${TOWERS[k].cost})`;
+  b.onclick = () => {
+    selected = k;
+    document.querySelectorAll(".btn").forEach(x => x.classList.remove("selected"));
+    b.classList.add("selected");
+  };
+  menu.appendChild(b);
+}
 
-/* ================= PLACEMENT ================= */
+/* ================= PLACEMENT (LOCKED) ================= */
 const ray = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 let taps = 0, tapTimer;
@@ -222,16 +296,49 @@ renderer.domElement.addEventListener("pointerdown", e => {
 
     ray.setFromCamera(pointer, camera);
     const hit = ray.intersectObject(ground);
-    if (hit.length) {
-      const sheep = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 8, 8),
-        mats.wool
-      );
-      sheep.position.set(Math.round(hit[0].point.x), 1, Math.round(hit[0].point.z));
-      scene.add(sheep);
-    }
+    if (hit.length) placeTower(hit[0].point);
   }
 });
+
+function placeTower(pos) {
+  const t = TOWERS[selected];
+  if (wool < t.cost) return;
+
+  wool -= t.cost;
+  document.getElementById("wool").textContent = wool;
+
+  const unit = t.build();
+  unit.position.set(Math.round(pos.x), 0, Math.round(pos.z));
+  scene.add(unit);
+}
+
+/* ================= ENEMIES ================= */
+function makeEnemy() {
+  const g = baseSheep(mats.enemy);
+  g.hp = 20;
+  g.max = 20;
+  g.pathIndex = 0;
+
+  const bar = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.5, 0.3),
+    new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+  );
+  bar.position.y = 3;
+  g.add(bar);
+  g.bar = bar;
+
+  return g;
+}
+
+const enemies = [];
+let spawnTimer = 0;
+
+function spawnEnemy() {
+  const e = makeEnemy();
+  e.position.copy(path[0]);
+  enemies.push(e);
+  scene.add(e);
+}
 
 /* ================= LOOP ================= */
 function animate() {
