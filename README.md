@@ -39,11 +39,9 @@ html, body {
   border-radius: 8px;
   padding: 6px;
   width: 180px;
-  font-size: 13px;
 }
 .btn.selected {
   border-color: orange;
-  background: #fff3dd;
 }
 </style>
 </head>
@@ -76,12 +74,11 @@ scene.add(new THREE.AmbientLight(0xffffff, 1));
 /* ================= MATERIALS ================= */
 const mats = {
   grass: new THREE.MeshBasicMaterial({ color: 0x2a6a32 }),
+  path: new THREE.MeshBasicMaterial({ color: 0x8b6b3e }),
   wool: new THREE.MeshBasicMaterial({ color: 0xdddddd }),
-  goat: new THREE.MeshBasicMaterial({ color: 0xc8b07a }),
+  enemy: new THREE.MeshBasicMaterial({ color: 0xcc3333 }),
   dark: new THREE.MeshBasicMaterial({ color: 0x444444 }),
-  horn: new THREE.MeshBasicMaterial({ color: 0x8b5a2b }),
-  metal: new THREE.MeshBasicMaterial({ color: 0xb0b0b0 }),
-  green: new THREE.MeshBasicMaterial({ color: 0x44cc44 })
+  wood: new THREE.MeshBasicMaterial({ color: 0x8b5a2b })
 };
 
 /* ================= GROUND ================= */
@@ -92,13 +89,58 @@ const ground = new THREE.Mesh(
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
+/* ================= PATH ================= */
+const path = [
+  new THREE.Vector3(-70, 0, -40),
+  new THREE.Vector3(-70, 0, 20),
+  new THREE.Vector3(40, 0, 20),
+  new THREE.Vector3(40, 0, 60)
+];
+
+// visual tiles
+for (let i = 0; i < path.length - 1; i++) {
+  const a = path[i], b = path[i + 1];
+  const len = a.distanceTo(b);
+  for (let j = 0; j <= len / 4; j++) {
+    const tile = new THREE.Mesh(
+      new THREE.BoxGeometry(4, 0.2, 4),
+      mats.path
+    );
+    tile.position.copy(a.clone().lerp(b, j / (len / 4)));
+    tile.position.y = 0.1;
+    scene.add(tile);
+  }
+}
+
+/* ================= SPAWN PEN ================= */
+for (let x = -80; x <= -60; x += 4) {
+  for (let z of [-50, -30]) {
+    const post = new THREE.Mesh(
+      new THREE.BoxGeometry(2, 4, 2),
+      mats.wood
+    );
+    post.position.set(x, 2, z);
+    scene.add(post);
+  }
+}
+for (let z = -50; z <= -30; z += 4) {
+  for (let x of [-80, -60]) {
+    const post = new THREE.Mesh(
+      new THREE.BoxGeometry(2, 4, 2),
+      mats.wood
+    );
+    post.position.set(x, 2, z);
+    scene.add(post);
+  }
+}
+
 /* ================= MODELS ================= */
-function makeBaseSheep(woolMat) {
+function makeEnemy() {
   const g = new THREE.Group();
 
   const body = new THREE.Mesh(
-    new THREE.SphereGeometry(1.3, 8, 8),
-    woolMat
+    new THREE.SphereGeometry(1.2, 8, 8),
+    mats.enemy
   );
   body.position.y = 1.4;
   g.add(body);
@@ -107,11 +149,11 @@ function makeBaseSheep(woolMat) {
     new THREE.BoxGeometry(0.6, 0.6, 0.6),
     mats.dark
   );
-  face.position.set(0, 1.4, 1.2);
+  face.position.set(0, 1.4, 1.1);
   g.add(face);
 
-  [-0.5, 0.5].forEach(x => {
-    [-0.5, 0.5].forEach(z => {
+  [-0.4, 0.4].forEach(x => {
+    [-0.4, 0.4].forEach(z => {
       const leg = new THREE.Mesh(
         new THREE.CylinderGeometry(0.12, 0.12, 0.8),
         mats.dark
@@ -121,121 +163,48 @@ function makeBaseSheep(woolMat) {
     });
   });
 
-  return g;
-}
-
-/* ===== SPECIFIC TOWERS ===== */
-function cubeTower() {
-  return makeBaseSheep(mats.wool);
-}
-
-function ramTower() {
-  const g = makeBaseSheep(mats.wool);
-  for (let s of [-1, 1]) {
-    const horn = new THREE.Mesh(
-      new THREE.TorusGeometry(0.5, 0.15, 8, 16),
-      mats.horn
-    );
-    horn.rotation.y = Math.PI / 2;
-    horn.position.set(0.7 * s, 1.8, 0.4);
-    g.add(horn);
-  }
-  return g;
-}
-
-function goatTower() {
-  const g = makeBaseSheep(mats.goat);
-  g.scale.set(1.2, 1.2, 1.2);
-  for (let s of [-1, 1]) {
-    const horn = new THREE.Mesh(
-      new THREE.TorusGeometry(1.2, 0.18, 8, 20),
-      mats.horn
-    );
-    horn.rotation.y = Math.PI / 2;
-    horn.position.set(1.1 * s, 2.2, 0.3);
-    g.add(horn);
-  }
-  return g;
-}
-
-function grazerTower() {
-  const g = new THREE.Group();
-
-  const cube = new THREE.Mesh(
-    new THREE.BoxGeometry(2.5, 1.2, 2.5),
-    mats.grass
+  // health bar
+  const bar = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.5, 0.3),
+    new THREE.MeshBasicMaterial({ color: 0x00ff00 })
   );
-  cube.position.y = 0.6;
-  g.add(cube);
+  bar.position.y = 3;
+  g.add(bar);
 
-  const sheep = makeBaseSheep(mats.wool);
-  sheep.scale.set(0.5, 0.5, 0.5);
-  sheep.position.y = 1.5;
-  g.add(sheep);
-
-  return g;
-}
-
-function shearerTower() {
-  const g = new THREE.Group();
-
-  const pillar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.6, 0.6, 3),
-    mats.metal
-  );
-  pillar.position.y = 1.5;
-  g.add(pillar);
-
-  const blade1 = new THREE.Mesh(
-    new THREE.BoxGeometry(0.2, 1.5, 0.1),
-    mats.metal
-  );
-  blade1.position.set(-0.3, 3.2, 0);
-  blade1.rotation.z = 0.4;
-  g.add(blade1);
-
-  const blade2 = blade1.clone();
-  blade2.position.x = 0.3;
-  blade2.rotation.z = -0.4;
-  g.add(blade2);
+  g.bar = bar;
+  g.hp = 20;
+  g.max = 20;
+  g.pathIndex = 0;
 
   return g;
 }
 
-/* ================= TOWER DATA ================= */
-const TOWERS = {
-  Cube: { cost: 10, build: cubeTower },
-  Ram: { cost: 25, build: ramTower },
-  Grazer: { cost: 100, build: grazerTower },
-  Shearer: { cost: 250, build: shearerTower },
-  Goat: { cost: 500, build: goatTower }
-};
+/* ================= ENEMIES ================= */
+const enemies = [];
+let spawnTimer = 0;
 
+function spawnEnemy() {
+  const e = makeEnemy();
+  e.position.copy(path[0]);
+  enemies.push(e);
+  scene.add(e);
+}
+
+/* ================= TOWERS (PLACEMENT ONLY) ================= */
+const TOWERS = { Cube: 10 };
 let wool = 500;
 let selected = "Cube";
 
-/* ================= MENU ================= */
 const menu = document.getElementById("menu");
-for (const k in TOWERS) {
-  const b = document.createElement("div");
-  b.className = "btn" + (k === selected ? " selected" : "");
-  b.textContent = `${k} (${TOWERS[k].cost})`;
-  b.onclick = () => {
-    selected = k;
-    document.querySelectorAll(".btn").forEach(x => x.classList.remove("selected"));
-    b.classList.add("selected");
-  };
-  menu.appendChild(b);
-}
+const b = document.createElement("div");
+b.className = "btn selected";
+b.textContent = "Cube (10)";
+menu.appendChild(b);
 
-/* ================= PLACEMENT (LOCKED & SAFE) ================= */
+/* ================= PLACEMENT ================= */
 const ray = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 let taps = 0, tapTimer;
-
-function getPointer(e) {
-  return e.touches ? e.touches[0] : e;
-}
 
 renderer.domElement.addEventListener("pointerdown", e => {
   taps++;
@@ -245,7 +214,7 @@ renderer.domElement.addEventListener("pointerdown", e => {
     clearTimeout(tapTimer);
     taps = 0;
 
-    const p = getPointer(e);
+    const p = e.touches ? e.touches[0] : e;
     const rect = renderer.domElement.getBoundingClientRect();
 
     pointer.x = ((p.clientX - rect.left) / rect.width) * 2 - 1;
@@ -253,25 +222,37 @@ renderer.domElement.addEventListener("pointerdown", e => {
 
     ray.setFromCamera(pointer, camera);
     const hit = ray.intersectObject(ground);
-    if (hit.length) placeTower(hit[0].point);
+    if (hit.length) {
+      const sheep = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 8, 8),
+        mats.wool
+      );
+      sheep.position.set(Math.round(hit[0].point.x), 1, Math.round(hit[0].point.z));
+      scene.add(sheep);
+    }
   }
 });
-
-function placeTower(pos) {
-  const t = TOWERS[selected];
-  if (wool < t.cost) return;
-
-  wool -= t.cost;
-  document.getElementById("wool").textContent = wool;
-
-  const unit = t.build();
-  unit.position.set(Math.round(pos.x), 0, Math.round(pos.z));
-  scene.add(unit);
-}
 
 /* ================= LOOP ================= */
 function animate() {
   requestAnimationFrame(animate);
+
+  spawnTimer++;
+  if (spawnTimer > 120) {
+    spawnTimer = 0;
+    spawnEnemy();
+  }
+
+  enemies.forEach(e => {
+    const next = path[e.pathIndex + 1];
+    if (!next) return;
+    const dir = next.clone().sub(e.position);
+    e.lookAt(next.x, 1.4, next.z);
+    if (dir.length() < 0.5) e.pathIndex++;
+    e.position.add(dir.normalize().multiplyScalar(0.05));
+    e.bar.scale.x = e.hp / e.max;
+  });
+
   renderer.render(scene, camera);
 }
 animate();
