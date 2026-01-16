@@ -1,21 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Wooly Warfare</title>
-
 <style>
 html,body{margin:0;overflow:hidden;touch-action:none;font-family:sans-serif}
 #ui{position:absolute;top:10px;left:10px;background:#fff;padding:8px;border-radius:8px;z-index:5}
-#menu{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px}
-.btn{background:#fff;border:2px solid #777;border-radius:8px;padding:6px;width:180px}
+#menu{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;z-index:5}
+.btn{background:#fff;border:2px solid #777;border-radius:8px;padding:6px;width:190px}
 .btn.selected{border-color:orange;background:#fff3dd}
 </style>
 </head>
-
 <body>
+
 <div id="ui">🧶 Wool: <span id="wool">500</span></div>
 <div id="menu"></div>
 
@@ -167,13 +165,14 @@ function place(pos){
  wool-=t.cost; document.getElementById("wool").textContent=wool;
  const u=t.build();
  u.position.set(Math.round(pos.x),0,Math.round(pos.z));
- u.cooldown=0; towers.push(u); scene.add(u);
+ u.cooldown=0; u.anim={t:0};
+ towers.push(u); scene.add(u);
 }
 
 /* ================= ENEMIES ================= */
 function enemy(){
  const g=baseSheep(M.enemy);
- g.hp=20; g.max=20; g.i=0;
+ g.hp=20; g.max=20; g.i=0; g.hitFlash=0;
  const bar=new THREE.Mesh(new THREE.PlaneGeometry(2.5,.3),new THREE.MeshBasicMaterial({color:0x00ff00}));
  bar.position.y=3; g.add(bar); g.bar=bar;
  return g;
@@ -187,7 +186,7 @@ function spawnEnemy(){
 /* ================= COMBAT ================= */
 function attack(t,e){
  t.lookAt(e.position.x,1.4,e.position.z);
- t.body.rotation.x=Math.sin(Date.now()*0.02)*0.4;
+ t.anim.t=10;
  if(t.shoots){
   const p=new THREE.Mesh(new THREE.SphereGeometry(.25),M.projectile);
   p.position.copy(t.position).add(new THREE.Vector3(0,2,0));
@@ -195,6 +194,7 @@ function attack(t,e){
   projectiles.push(p); scene.add(p);
  }else{
   e.hp-=t.damage;
+  e.hitFlash=5;
  }
  t.cooldown=40;
 }
@@ -203,21 +203,31 @@ function attack(t,e){
 function animate(){
  requestAnimationFrame(animate);
 
- spawn++; if(spawn>120){spawn=0;spawnEnemy();}
+ spawn++; if(spawn>140){spawn=0;spawnEnemy();}
 
  enemies.forEach(e=>{
   const n=path[e.i+1]; if(!n)return;
   e.lookAt(n.x,1.4,n.z);
   const d=n.clone().sub(e.position);
   if(d.length()<.5)e.i++;
-  e.position.add(d.normalize().multiplyScalar(.05));
+  e.position.add(d.normalize().multiplyScalar(.045));
   e.bar.scale.x=e.hp/e.max;
+  if(e.hitFlash>0){e.hitFlash--;e.children[0].material.color.set(0xffffff);}
+  else e.children[0].material.color.set(0xcc3333);
  });
 
  towers.forEach(t=>{
   if(t.cooldown>0)t.cooldown--;
+  if(t.anim.t>0){
+   t.anim.t--;
+   if(t.body){
+    const l=Math.sin(t.anim.t/10*Math.PI)*0.4;
+    t.body.position.z=-l;
+   }
+  }else if(t.body)t.body.position.z=0;
+
   if(t.support)return;
-  const target=enemies.find(e=>e.position.distanceTo(t.position)<t.range&&e.hp>0);
+  const target=enemies.find(e=>e.hp>0&&e.position.distanceTo(t.position)<t.range);
   if(target&&t.cooldown===0)attack(t,target);
  });
 
@@ -226,17 +236,27 @@ function animate(){
   const d=p.target.position.clone().add(new THREE.Vector3(0,1.5,0)).sub(p.position);
   if(d.length()<.5){
    p.target.hp-=p.damage;
+   p.target.hitFlash=5;
    scene.remove(p);projectiles.splice(i,1);
   }else p.position.add(d.normalize().multiplyScalar(.6));
  });
 
  for(let i=enemies.length-1;i>=0;i--){
-  if(enemies[i].hp<=0){scene.remove(enemies[i]);enemies.splice(i,1);wool+=5;document.getElementById("wool").textContent=wool;}
+  if(enemies[i].hp<=0){
+   scene.remove(enemies[i]); enemies.splice(i,1);
+   wool+=5; document.getElementById("wool").textContent=wool;
+  }
  }
 
  renderer.render(scene,camera);
 }
 animate();
+
+window.addEventListener("resize",()=>{
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+});
 </script>
 </body>
 </html>
