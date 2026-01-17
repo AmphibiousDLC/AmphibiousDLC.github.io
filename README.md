@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -40,9 +40,7 @@ html,body{
   padding:8px;
   border:2px solid #999;
 }
-canvas{
-  display:block;
-}
+canvas{display:block;}
 </style>
 </head>
 
@@ -60,14 +58,14 @@ canvas{
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
 /* ================= SCENE ================= */
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 500);
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,500);
 camera.position.set(45,55,65);
 camera.lookAt(0,0,0);
 
-const renderer = new THREE.WebGLRenderer({antialias:true});
+const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(renderer.domElement);
@@ -90,7 +88,7 @@ const M={
 };
 
 /* ================= GROUND ================= */
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(200,200),M.grass);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),M.grass);
 ground.rotation.x=-Math.PI/2;
 scene.add(ground);
 
@@ -102,6 +100,8 @@ const path=[
  new THREE.Vector3(40,0,60)
 ];
 
+const pathTiles=[];
+
 for(let i=0;i<path.length-1;i++){
  const a=path[i],b=path[i+1];
  const len=a.distanceTo(b);
@@ -110,6 +110,7 @@ for(let i=0;i<path.length-1;i++){
   t.position.copy(a.clone().lerp(b,j/(len/4)));
   t.position.y=0.1;
   scene.add(t);
+  pathTiles.push(t.position.clone());
  }
 }
 
@@ -172,18 +173,18 @@ function grazer(){
  s.scale.set(.5,.5,.5);
  s.position.y=1.5;
  g.add(s);
- g.damage=16; // doubled
+ g.damage=16;
  g.range=14;
  return g;
 }
 function shearer(){const g=new THREE.Group();g.support=true;return g;}
 
 const TOWERS={
- Cube:{cost:10,build:cube},
- Ram:{cost:25,build:ram},
- Grazer:{cost:100,build:grazer},
- Shearer:{cost:250,build:shearer},
- Goat:{cost:500,build:goat}
+ Cube:{cost:10,build:cube,limit:20,count:0},
+ Ram:{cost:25,build:ram,limit:10,count:0},
+ Grazer:{cost:100,build:grazer,limit:5,count:0},
+ Shearer:{cost:250,build:shearer,limit:3,count:0},
+ Goat:{cost:500,build:goat,limit:2,count:0}
 };
 
 /* ================= UI ================= */
@@ -208,6 +209,10 @@ const pt=new THREE.Vector2();
 let taps=0,timer;
 const towers=[];
 
+function onPath(pos){
+ return pathTiles.some(p=>p.distanceTo(pos)<3);
+}
+
 renderer.domElement.addEventListener("pointerdown",e=>{
  taps++;
  if(taps===1){timer=setTimeout(()=>taps=0,300);return;}
@@ -221,15 +226,22 @@ renderer.domElement.addEventListener("pointerdown",e=>{
  const hit=ray.intersectObject(ground);
  if(!hit.length)return;
 
+ const pos=hit[0].point.clone();
+ pos.set(Math.round(pos.x),0,Math.round(pos.z));
+
  const t=TOWERS[selected];
- if(wool<t.cost)return;
+ if(wool<t.cost) return;
+ if(t.count>=t.limit) return;
+ if(onPath(pos)) return;
+
  wool-=t.cost;
  document.getElementById("wool").textContent=wool;
 
  const u=t.build();
- u.position.set(Math.round(hit[0].point.x),0,Math.round(hit[0].point.z));
+ u.position.copy(pos);
  u.cooldown=0;
  towers.push(u);
+ t.count++;
  scene.add(u);
 });
 
@@ -252,7 +264,6 @@ function makeEnemy(type){
   g.add(crown);
   g.scale.set(2,2,2);
  }
-
  return g;
 }
 
@@ -275,7 +286,7 @@ document.getElementById("startRound").onclick=()=>{
 function animate(){
  requestAnimationFrame(animate);
 
- if(spawning && queue.length){
+ if(spawning&&queue.length){
   spawnTimer++;
   if(spawnTimer>50){
    spawnTimer=0;
@@ -285,7 +296,7 @@ function animate(){
    scene.add(e);
   }
  }
- if(spawning && !queue.length && !enemies.length)spawning=false;
+ if(spawning&&!queue.length&&!enemies.length)spawning=false;
 
  enemies.forEach(e=>{
   const n=path[e.i+1];
@@ -300,7 +311,7 @@ function animate(){
   if(t.support)return;
   if(t.cooldown>0)t.cooldown--;
   const target=enemies.find(e=>e.position.distanceTo(t.position)<t.range);
-  if(target && t.cooldown===0){
+  if(target&&t.cooldown===0){
    target.hp-=t.damage;
    t.cooldown=40;
   }
