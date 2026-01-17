@@ -212,7 +212,7 @@ for(const k in TOWERS){
  menu.appendChild(b);
 }
 
-/* ================= PLACEMENT (FIXED) ================= */
+/* ================= PLACEMENT ================= */
 const ray=new THREE.Raycaster();
 const pt=new THREE.Vector2();
 let taps=0,timer;
@@ -276,16 +276,20 @@ function makeEnemy(type){
 
 const enemies=[];
 
-/* ================= ROUNDS ================= */
+/* ================= ROUNDS (UPDATED) ================= */
 let round=0,queue=[],spawning=false,spawnTimer=0;
+
 document.getElementById("startRound").onclick=()=>{
  if(spawning||enemies.length)return;
  round++;
  document.getElementById("round").textContent=round;
+
  queue=[...Array(6+round).fill("normal")];
- if(round>=5)queue.push("fast");
- if(round>=10)queue.push("tank");
- if(round>=20&&round%10===0)queue.push("boss");
+
+ if(round>=5) queue.push(...Array(round-4).fill("fast"));
+ if(round>=10) queue.push(...Array(round-9).fill("tank"));
+ if(round>=20 && round%10===0) queue.push("boss");
+
  spawning=true;
 };
 
