@@ -12,15 +12,6 @@ html,body{
   touch-action:none;
   font-family:sans-serif;
 }
-#ui{
-  position:absolute;
-  top:10px;
-  left:10px;
-  background:#fff;
-  padding:8px;
-  border-radius:8px;
-  z-index:10;
-}
 #menu{
   position:absolute;
   right:10px;
@@ -28,7 +19,7 @@ html,body{
   transform:translateY(-50%);
   display:flex;
   flex-direction:column;
-  gap:6px;
+  gap:8px;
   z-index:10;
 }
 .btn{
@@ -37,35 +28,46 @@ html,body{
   border-radius:8px;
   padding:6px;
   width:200px;
+  cursor:pointer;
 }
 .btn.selected{
   border-color:orange;
   background:#fff3dd;
+}
+#info{
+  background:#fff;
+  border-radius:8px;
+  padding:8px;
+  border:2px solid #999;
+}
+canvas{
+  display:block;
 }
 </style>
 </head>
 
 <body>
 
-<div id="ui">
-🧶 Wool: <span id="wool">50</span><br>
-🔁 Round: <span id="round">0</span><br>
-<button id="startRound">Start Round</button>
+<div id="menu">
+  <div id="towerButtons"></div>
+  <div id="info">
+    🧶 Wool: <span id="wool">50</span><br>
+    🔁 Round: <span id="round">0</span><br><br>
+    <button id="startRound" class="btn">Start Round</button>
+  </div>
 </div>
-
-<div id="menu"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
 /* ================= SCENE ================= */
-const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x87ceeb);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
 
-const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,500);
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 500);
 camera.position.set(45,55,65);
 camera.lookAt(0,0,0);
 
-const renderer=new THREE.WebGLRenderer({antialias:true});
+const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(renderer.domElement);
@@ -88,7 +90,7 @@ const M={
 };
 
 /* ================= GROUND ================= */
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),M.grass);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(200,200),M.grass);
 ground.rotation.x=-Math.PI/2;
 scene.add(ground);
 
@@ -114,17 +116,11 @@ for(let i=0;i<path.length-1;i++){
 /* ================= BASE SHEEP ================= */
 function baseSheep(mat){
  const g=new THREE.Group();
-
- const body=new THREE.Mesh(
-  new THREE.SphereGeometry(1.3,8,8),mat
- );
+ const body=new THREE.Mesh(new THREE.SphereGeometry(1.3,8,8),mat);
  body.position.y=1.4;
  g.add(body);
- g.body=body;
 
- const face=new THREE.Mesh(
-  new THREE.BoxGeometry(.6,.6,.6),M.dark
- );
+ const face=new THREE.Mesh(new THREE.BoxGeometry(.6,.6,.6),M.dark);
  face.position.set(0,1.4,1.2);
  g.add(face);
 
@@ -138,42 +134,35 @@ function baseSheep(mat){
   });
  });
 
- g.attackAnim=0;
  return g;
 }
 
 /* ================= HORNS ================= */
 function addRamHorns(g){
- for(let s of [-1,1]){
+ [-1,1].forEach(s=>{
   const h=new THREE.Mesh(
    new THREE.TorusGeometry(.6,.18,10,20),M.horn
   );
   h.rotation.y=Math.PI/2;
   h.position.set(.9*s,1.6,0);
   g.add(h);
- }
+ });
 }
 function addGoatHorns(g){
- for(let s of [-1,1]){
+ [-1,1].forEach(s=>{
   const h=new THREE.Mesh(
    new THREE.TorusGeometry(1.2,.3,12,24),M.horn
   );
   h.rotation.y=Math.PI/2;
   h.position.set(1.3*s,2.1,0);
   g.add(h);
- }
+ });
 }
 
 /* ================= TOWERS ================= */
 function cube(){const g=baseSheep(M.wool);g.damage=5;g.range=12;return g;}
 function ram(){const g=baseSheep(M.wool);g.damage=10;g.range=14;addRamHorns(g);return g;}
-function goat(){
- const g=baseSheep(M.goat);
- g.damage=150;g.range=16;
- g.scale.set(1.2,1.2,1.2);
- addGoatHorns(g);
- return g;
-}
+function goat(){const g=baseSheep(M.goat);g.damage=150;g.range=16;g.scale.set(1.2,1.2,1.2);addGoatHorns(g);return g;}
 function grazer(){
  const g=new THREE.Group();
  const c=new THREE.Mesh(new THREE.BoxGeometry(2.6,1.2,2.6),M.grassLight);
@@ -183,7 +172,8 @@ function grazer(){
  s.scale.set(.5,.5,.5);
  s.position.y=1.5;
  g.add(s);
- g.damage=16;g.range=14;
+ g.damage=16; // doubled
+ g.range=14;
  return g;
 }
 function shearer(){const g=new THREE.Group();g.support=true;return g;}
@@ -198,7 +188,7 @@ const TOWERS={
 
 /* ================= UI ================= */
 let wool=50,selected="Cube";
-const menu=document.getElementById("menu");
+const menu=document.getElementById("towerButtons");
 
 for(const k in TOWERS){
  const b=document.createElement("div");
@@ -220,10 +210,7 @@ const towers=[];
 
 renderer.domElement.addEventListener("pointerdown",e=>{
  taps++;
- if(taps===1){
-  timer=setTimeout(()=>taps=0,300);
-  return;
- }
+ if(taps===1){timer=setTimeout(()=>taps=0,300);return;}
  clearTimeout(timer);taps=0;
 
  const rect=renderer.domElement.getBoundingClientRect();
@@ -236,7 +223,6 @@ renderer.domElement.addEventListener("pointerdown",e=>{
 
  const t=TOWERS[selected];
  if(wool<t.cost)return;
-
  wool-=t.cost;
  document.getElementById("wool").textContent=wool;
 
@@ -248,48 +234,40 @@ renderer.domElement.addEventListener("pointerdown",e=>{
 });
 
 /* ================= ENEMIES ================= */
+const enemies=[];
 function makeEnemy(type){
- let mat=M.enemy,hp=80,speed=.045,woolGain=5;
- if(type==="fast"){mat=M.fast;hp=60;speed=.08;woolGain=6;}
- if(type==="tank"){mat=M.tank;hp=240;speed=.025;woolGain=15;}
- if(type==="boss"){hp=1200;speed=.02;woolGain=100;}
+ let mat=M.enemy,hp=40,speed=.045,woolGain=5;
+ if(type==="fast"){mat=M.fast;hp=30;speed=.08;woolGain=6;}
+ if(type==="tank"){mat=M.tank;hp=120;speed=.025;woolGain=15;}
+ if(type==="boss"){hp=600;speed=.02;woolGain=100;}
 
  const g=baseSheep(mat);
  g.hp=hp;g.max=hp;g.speed=speed;g.wool=woolGain;g.i=0;
 
  if(type==="boss"){
-  const crown=new THREE.Mesh(new THREE.TorusGeometry(1,.3,8,16),M.crown);
+  const crown=new THREE.Mesh(
+   new THREE.TorusGeometry(1,.3,8,16),M.crown
+  );
   crown.position.y=2.8;
   g.add(crown);
   g.scale.set(2,2,2);
  }
 
- const bar=new THREE.Mesh(
-  new THREE.PlaneGeometry(2.5,.3),
-  new THREE.MeshBasicMaterial({color:0x00ff00})
- );
- bar.position.y=3;
- g.add(bar);
- g.bar=bar;
  return g;
 }
 
-const enemies=[];
-
-/* ================= ROUNDS (UPDATED) ================= */
-let round=0,queue=[],spawning=false,spawnTimer=0;
+/* ================= ROUNDS ================= */
+let round=0,spawning=false,queue=[],spawnTimer=0;
 
 document.getElementById("startRound").onclick=()=>{
  if(spawning||enemies.length)return;
  round++;
  document.getElementById("round").textContent=round;
-
- queue=[...Array(6+round).fill("normal")];
-
- if(round>=5) queue.push(...Array(round-4).fill("fast"));
- if(round>=10) queue.push(...Array(round-9).fill("tank"));
- if(round>=20 && round%10===0) queue.push("boss");
-
+ queue=[];
+ queue.push(...Array(6+round).fill("normal"));
+ if(round>=5)queue.push(...Array(round-4).fill("fast"));
+ if(round>=10)queue.push(...Array(round-9).fill("tank"));
+ if(round>=20 && round%10===0)queue.push("boss");
  spawning=true;
 };
 
@@ -297,7 +275,7 @@ document.getElementById("startRound").onclick=()=>{
 function animate(){
  requestAnimationFrame(animate);
 
- if(spawning&&queue.length){
+ if(spawning && queue.length){
   spawnTimer++;
   if(spawnTimer>50){
    spawnTimer=0;
@@ -307,33 +285,24 @@ function animate(){
    scene.add(e);
   }
  }
- if(spawning&&!queue.length&&!enemies.length)spawning=false;
+ if(spawning && !queue.length && !enemies.length)spawning=false;
 
  enemies.forEach(e=>{
   const n=path[e.i+1];
   if(!n)return;
-  e.lookAt(n);
+  e.lookAt(n.x,1.4,n.z);
   const d=n.clone().sub(e.position);
   if(d.length()<.5)e.i++;
   e.position.add(d.normalize().multiplyScalar(e.speed));
-  e.bar.scale.x=e.hp/e.max;
  });
 
  towers.forEach(t=>{
   if(t.support)return;
   if(t.cooldown>0)t.cooldown--;
-  if(t.attackAnim>0)t.attackAnim-=.15;
-
-  const target=enemies.find(e=>e.hp>0&&e.position.distanceTo(t.position)<t.range);
-  if(target&&t.cooldown===0){
-   t.lookAt(target.position);
+  const target=enemies.find(e=>e.position.distanceTo(t.position)<t.range);
+  if(target && t.cooldown===0){
    target.hp-=t.damage;
-   t.attackAnim=1;
    t.cooldown=40;
-  }
-  if(t.body){
-   const a=Math.max(0,t.attackAnim);
-   t.body.position.z=-a*.4;
   }
  });
 
