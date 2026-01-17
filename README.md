@@ -144,42 +144,39 @@ function baseSheep(mat){
 
 /* ================= HORNS ================= */
 function addRamHorns(g){
- [-1,1].forEach(s=>{
+ for(let s of [-1,1]){
   const h=new THREE.Mesh(
    new THREE.TorusGeometry(.6,.18,10,20),M.horn
   );
   h.rotation.y=Math.PI/2;
-  h.position.set(.9*s,1.7,.2);
+  h.position.set(.9*s,1.6,0);
   g.add(h);
- });
+ }
 }
-
 function addGoatHorns(g){
- [-1,1].forEach(s=>{
+ for(let s of [-1,1]){
   const h=new THREE.Mesh(
-   new THREE.TorusGeometry(1,.25,12,24),M.horn
+   new THREE.TorusGeometry(1.2,.3,12,24),M.horn
   );
   h.rotation.y=Math.PI/2;
-  h.position.set(1.2*s,2.1,.2);
+  h.position.set(1.3*s,2.1,0);
   g.add(h);
- });
+ }
 }
 
 /* ================= TOWERS ================= */
 function cube(){const g=baseSheep(M.wool);g.damage=5;g.range=12;return g;}
-function ram(){const g=baseSheep(M.wool);addRamHorns(g);g.damage=10;g.range=14;return g;}
+function ram(){const g=baseSheep(M.wool);g.damage=10;g.range=14;addRamHorns(g);return g;}
 function goat(){
  const g=baseSheep(M.goat);
- addGoatHorns(g);
  g.damage=150;g.range=16;
  g.scale.set(1.2,1.2,1.2);
+ addGoatHorns(g);
  return g;
 }
 function grazer(){
  const g=new THREE.Group();
- const c=new THREE.Mesh(
-  new THREE.BoxGeometry(2.6,1.2,2.6),M.grassLight
- );
+ const c=new THREE.Mesh(new THREE.BoxGeometry(2.6,1.2,2.6),M.grassLight);
  c.position.y=.6;
  g.add(c);
  const s=baseSheep(M.wool);
@@ -189,11 +186,7 @@ function grazer(){
  g.damage=8;g.range=14;
  return g;
 }
-function shearer(){
- const g=new THREE.Group();
- g.support=true;
- return g;
-}
+function shearer(){const g=new THREE.Group();g.support=true;return g;}
 
 const TOWERS={
  Cube:{cost:10,build:cube},
@@ -204,8 +197,7 @@ const TOWERS={
 };
 
 /* ================= UI ================= */
-let wool=50;
-let selected="Cube";
+let wool=50,selected="Cube";
 const menu=document.getElementById("menu");
 
 for(const k in TOWERS){
@@ -220,7 +212,7 @@ for(const k in TOWERS){
  menu.appendChild(b);
 }
 
-/* ================= PLACEMENT ================= */
+/* ================= PLACEMENT (FIXED) ================= */
 const ray=new THREE.Raycaster();
 const pt=new THREE.Vector2();
 let taps=0,timer;
@@ -230,44 +222,43 @@ renderer.domElement.addEventListener("pointerdown",e=>{
  taps++;
  if(taps===1){
   timer=setTimeout(()=>taps=0,300);
- }else{
-  clearTimeout(timer);taps=0;
-  pt.x=(e.clientX/innerWidth)*2-1;
-  pt.y=-(e.clientY/innerHeight)*2+1;
-  ray.setFromCamera(pt,camera);
-  const hit=ray.intersectObject(ground);
-  if(hit.length){
-   const t=TOWERS[selected];
-   if(wool<t.cost)return;
-   wool-=t.cost;
-   document.getElementById("wool").textContent=wool;
-   const u=t.build();
-   u.position.set(Math.round(hit[0].point.x),0,Math.round(hit[0].point.z));
-   u.cooldown=0;
-   towers.push(u);
-   scene.add(u);
-  }
+  return;
  }
+ clearTimeout(timer);taps=0;
+
+ const rect=renderer.domElement.getBoundingClientRect();
+ pt.x=((e.clientX-rect.left)/rect.width)*2-1;
+ pt.y=-((e.clientY-rect.top)/rect.height)*2+1;
+
+ ray.setFromCamera(pt,camera);
+ const hit=ray.intersectObject(ground);
+ if(!hit.length)return;
+
+ const t=TOWERS[selected];
+ if(wool<t.cost)return;
+
+ wool-=t.cost;
+ document.getElementById("wool").textContent=wool;
+
+ const u=t.build();
+ u.position.set(Math.round(hit[0].point.x),0,Math.round(hit[0].point.z));
+ u.cooldown=0;
+ towers.push(u);
+ scene.add(u);
 });
 
 /* ================= ENEMIES ================= */
-const HP_MULT=4;
-
 function makeEnemy(type){
- let mat=M.enemy,hp=20,speed=.045,woolGain=5;
- if(type==="fast"){mat=M.fast;hp=15;speed=.08;woolGain=6;}
- if(type==="tank"){mat=M.tank;hp=60;speed=.025;woolGain=15;}
- if(type==="boss"){hp=300;speed=.02;woolGain=100;}
-
- hp*=HP_MULT;
+ let mat=M.enemy,hp=80,speed=.045,woolGain=5;
+ if(type==="fast"){mat=M.fast;hp=60;speed=.08;woolGain=6;}
+ if(type==="tank"){mat=M.tank;hp=240;speed=.025;woolGain=15;}
+ if(type==="boss"){hp=1200;speed=.02;woolGain=100;}
 
  const g=baseSheep(mat);
  g.hp=hp;g.max=hp;g.speed=speed;g.wool=woolGain;g.i=0;
 
  if(type==="boss"){
-  const crown=new THREE.Mesh(
-   new THREE.TorusGeometry(1,.3,8,16),M.crown
-  );
+  const crown=new THREE.Mesh(new THREE.TorusGeometry(1,.3,8,16),M.crown);
   crown.position.y=2.8;
   g.add(crown);
   g.scale.set(2,2,2);
@@ -280,23 +271,20 @@ function makeEnemy(type){
  bar.position.y=3;
  g.add(bar);
  g.bar=bar;
-
  return g;
 }
 
 const enemies=[];
 
 /* ================= ROUNDS ================= */
-let round=0,spawning=false,queue=[],spawnTimer=0;
-
+let round=0,queue=[],spawning=false,spawnTimer=0;
 document.getElementById("startRound").onclick=()=>{
  if(spawning||enemies.length)return;
  round++;
  document.getElementById("round").textContent=round;
- queue=[];
- queue.push(...Array(6+round).fill("normal"));
- if(round>=5)queue.push(...Array(3).fill("fast"));
- if(round>=10)queue.push(...Array(2).fill("tank"));
+ queue=[...Array(6+round).fill("normal")];
+ if(round>=5)queue.push("fast");
+ if(round>=10)queue.push("tank");
  if(round>=20&&round%10===0)queue.push("boss");
  spawning=true;
 };
@@ -315,10 +303,12 @@ function animate(){
    scene.add(e);
   }
  }
+ if(spawning&&!queue.length&&!enemies.length)spawning=false;
 
  enemies.forEach(e=>{
   const n=path[e.i+1];
   if(!n)return;
+  e.lookAt(n);
   const d=n.clone().sub(e.position);
   if(d.length()<.5)e.i++;
   e.position.add(d.normalize().multiplyScalar(e.speed));
@@ -337,7 +327,6 @@ function animate(){
    t.attackAnim=1;
    t.cooldown=40;
   }
-
   if(t.body){
    const a=Math.max(0,t.attackAnim);
    t.body.position.z=-a*.4;
