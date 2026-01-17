@@ -183,7 +183,7 @@ function grazer(){
  s.scale.set(.5,.5,.5);
  s.position.y=1.5;
  g.add(s);
- g.damage=8;g.range=14;
+ g.damage=16;g.range=14;
  return g;
 }
 function shearer(){const g=new THREE.Group();g.support=true;return g;}
